@@ -2,7 +2,7 @@
  * Tests: Manage Tester Integrations / API Keys
  *
  * Unit tests for the settings feature logic and API wrappers.
- * Component rendering tests (ApiKeyForm) are in src/__tests__/features/.
+ * Component rendering tests (ApiKeyForm) are in ApiKeyForm.test.tsx.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -17,6 +17,7 @@ vi.mock("../../lib/supabase", () => ({
   supabase: {},
   dbTable: (name: string) => `ai_qa_tester_${name}`,
 }));
+
 
 import { callEdgeFunction } from "@mzon7/zon-incubator-sdk";
 import { settingsSaveKeys, settingsGet, settingsValidateKeys } from "../../lib/api";
@@ -169,3 +170,4 @@ describe("Provider selection", () => {
     expect(VALID_PROVIDERS.includes("")).toBe(false);
   });
 });
+
