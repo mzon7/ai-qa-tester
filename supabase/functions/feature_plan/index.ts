@@ -8,8 +8,14 @@
  *   expected → assertion to verify after the action
  *   notes    → JSON with { action, assertion, selector_hints }
  *
- * The run itself is left in its current status; later steps will transition it
- * to "running" / "passed" / "failed".
+ * Guardrail: before planning, the description is assessed for clarity.
+ * If it is too vague to produce meaningful test steps, the run stays in
+ * "queued" status and its summary/error are set to a "needs_input:" message
+ * that tells the user exactly what information to add.  The caller receives
+ * a 422 with the same message so the UI can surface it without polling.
+ *
+ * The run itself is left in its current status when clarity passes; later
+ * steps will transition it to "running" / "passed" / "failed".
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -32,6 +38,86 @@ interface PlanStep {
   action: string;
   assertion: string;
   selector_hints: string[];
+}
+
+interface ClarityResult {
+  clear: boolean;
+  /** Present when clear === false: plain-English feedback on what's missing. */
+  feedback: string;
+}
+
+/**
+ * Ask the LLM whether the feature description is specific enough to produce a
+ * meaningful, executable test plan.  Returns immediately with a structured
+ * verdict so we can abort early without wasting tokens on planning.
+ *
+ * A description is considered CLEAR when it names:
+ *   1. A concrete UI behaviour (what the user does, e.g. "clicks Sign In")
+ *   2. An observable outcome (what should happen, e.g. "redirected to /home")
+ *
+ * A description is considered VAGUE when it is:
+ *   - A single generic word/phrase with no action or outcome ("login", "test my app")
+ *   - Ambiguous about which page or component is under test
+ *   - Missing any verifiable assertion ("make sure it works")
+ */
+async function checkClarity(
+  featureDescription: string,
+  targetUrl: string,
+  apiKey: string,
+): Promise<ClarityResult> {
+  const prompt = `You are a QA planner evaluating whether a feature description is specific enough to generate automated browser tests.
+
+Feature description: "${featureDescription}"
+Target URL: ${targetUrl}
+
+A description is CLEAR if it mentions:
+- A concrete UI action (click, fill, navigate, submit, etc.)
+- An observable outcome (redirect, message, element visible, etc.)
+
+A description is VAGUE if it is a single generic phrase with no action or outcome, or if the expected behaviour is completely undefined.
+
+Return ONLY valid JSON, no markdown:
+{ "clear": true }
+OR
+{ "clear": false, "feedback": "<one concise sentence: what specific information the user must add, e.g. 'Please describe what action triggers the feature and what the expected outcome is (e.g. clicking X should show Y).'>" }`;
+
+  const res = await fetch("https://api.x.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "grok-3-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      max_tokens: 200,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+
+  if (!res.ok) {
+    // On API error, default to allowing the plan to proceed rather than
+    // blocking the user with a false-negative.
+    return { clear: true, feedback: "" };
+  }
+
+  const data = await res.json() as {
+    choices: Array<{ message: { content: string } }>;
+  };
+  const raw = (data.choices?.[0]?.message?.content ?? "")
+    .replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+
+  try {
+    const parsed = JSON.parse(raw) as { clear: boolean; feedback?: string };
+    return {
+      clear: parsed.clear === true,
+      feedback: parsed.feedback ?? "",
+    };
+  } catch {
+    // Parse failure → default to allowing planning
+    return { clear: true, feedback: "" };
+  }
 }
 
 async function generatePlan(
@@ -227,6 +313,36 @@ async function doPlan(
   targetUrl: string,
   apiKey: string,
 ) {
+  // ── Guardrail: reject vague descriptions before spending tokens on planning ──
+  const clarity = await checkClarity(run.feature_description, targetUrl, apiKey);
+
+  if (!clarity.clear) {
+    const needsInputMessage =
+      `needs_input: ${clarity.feedback || "Please provide more detail about the feature: describe what action to perform and what the expected outcome should be."}`;
+
+    // Keep run in "queued" so the user can resubmit with a better description.
+    // Write the clarification guidance into summary + error so it surfaces in
+    // the UI without any additional polling.
+    await supabase
+      .from("ai_qa_tester_qa_runs")
+      .update({
+        summary: needsInputMessage,
+        error: needsInputMessage,
+      })
+      .eq("id", run.id);
+
+    await supabase
+      .from("ai_qa_tester_qa_run_logs")
+      .insert({
+        run_id: run.id,
+        ts: new Date().toISOString(),
+        level: "warn",
+        message: `feature_plan: description too vague to plan — ${needsInputMessage}`,
+      });
+
+    return json({ data: null, error: needsInputMessage }, 422);
+  }
+
   // ── Delete any existing steps for this run (idempotent re-plan) ─────────────
   await supabase
     .from("ai_qa_tester_qa_run_steps")
