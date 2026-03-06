@@ -17,8 +17,9 @@
     -H "Content-Type: application/json" \
     -d '{"query": "SELECT tablename FROM pg_tables WHERE schemaname='\''public'\'' AND tablename LIKE '\''ai_qa_tester_%'\'';"}'
   ```
-- Enable RLS on every new table
-- ALWAYS add a SELECT policy whenever you add any other policy — never add INSERT/UPDATE/DELETE without SELECT or data will silently disappear on refresh
+- **RLS is auto-managed**: The daemon automatically runs `setup_table_rls()` on any project table missing policies after each command
+  - You do NOT need to manually create RLS policies — they are applied automatically (anon, authenticated, service_role)
+  - For tighter security on specific tables, replace the broad auto-policies with specific ones
 - Server-side API routes MUST use the service-role/admin Supabase client, NOT the anon client — this bypasses RLS and avoids policy gaps
 - Client-side (browser) code may use the anon client — ensure matching RLS policies exist for every operation
 
