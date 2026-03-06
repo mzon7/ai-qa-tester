@@ -286,7 +286,7 @@ describe("ButtonScanPanel", () => {
         scanLoading: false,
       }),
     );
-    expect(screen.getByText("Run Scan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Trigger button scan/i })).toBeInTheDocument();
   });
 
   it("hides 'Run Scan' button when scanLoading", () => {
@@ -299,7 +299,7 @@ describe("ButtonScanPanel", () => {
         scanLoading: true,
       }),
     );
-    expect(screen.queryByText("Run Scan")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Trigger button scan/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Scanning interactive elements/)).toBeInTheDocument();
   });
 
@@ -314,7 +314,7 @@ describe("ButtonScanPanel", () => {
         scanLoading: false,
       }),
     );
-    fireEvent.click(screen.getByText("Run Scan"));
+    fireEvent.click(screen.getByRole("button", { name: /Trigger button scan/i }));
     expect(onTriggerScan).toHaveBeenCalledTimes(1);
   });
 
