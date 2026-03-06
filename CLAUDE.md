@@ -194,9 +194,22 @@ try {
 - Rate limiting is enforced in edge functions for run creation + chat (assume it exists; don't bypass with client retries).
 - Artifact access is always via signed URLs; never expose `storage_path` directly in UI links.
 
+<<<<<<< HEAD
 ## Edge Function Conventions
 - Every edge function MUST have a `test-fixture.json` in its directory (e.g. `supabase/functions/my-func/test-fixture.json`)
 - The fixture is a JSON request body used by the automated smoke test system to verify the function works after deployment
 - Use minimal/safe test data that exercises the happy path (e.g. a short test message for chat functions)
 - If the function needs a real DB record ID, use a zero UUID that returns a controlled 4xx (not 5xx)
 - Edge functions are auto-deployed by the build system — you do NOT need to deploy manually
+=======
+## Runtime Environment
+- This project runs on a Linux server but do NOT install heavy tools (Playwright, Puppeteer, headless browsers) directly onto it
+- If a feature requires browser automation or system-level tools:
+  1. Provision a NEW DigitalOcean droplet via the DO API ($DIGITALOCEAN_TOKEN is available)
+  2. Install the required tools on the new droplet (e.g. Node.js + Playwright)
+  3. Deploy your server-side scripts to the new droplet
+  4. The frontend triggers tests via HTTP calls to the new droplet
+  5. Store results back in Supabase so the frontend can display them
+- Do NOT fall back to HTML parsing or simplified approaches when real browser testing is required
+- The DigitalOcean API can create $6/mo droplets (s-1vcpu-1gb) which are sufficient for Playwright
+>>>>>>> 0b02d11 (auto: uncommitted changes)
