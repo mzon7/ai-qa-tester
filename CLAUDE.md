@@ -109,3 +109,10 @@
 - Validate `target_url` with allowlist `http/https`; block localhost/private IP ranges (use `src/lib/validators.ts`).
 - Rate limiting is enforced in edge functions for run creation + chat (assume it exists; don’t bypass with client retries).
 - Artifact access is always via signed URLs; never expose `storage_path` directly in UI links.
+
+## Edge Function Conventions
+- Every edge function MUST have a `test-fixture.json` in its directory (e.g. `supabase/functions/my-func/test-fixture.json`)
+- The fixture is a JSON request body used by the automated smoke test system to verify the function works after deployment
+- Use minimal/safe test data that exercises the happy path (e.g. a short test message for chat functions)
+- If the function needs a real DB record ID, use a zero UUID that returns a controlled 4xx (not 5xx)
+- Edge functions are auto-deployed by the build system — you do NOT need to deploy manually
