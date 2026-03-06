@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { runsCreate, runsListByProject, runsGet } from "../../../lib/api";
 import type { Run, RunStep, RunLog, ScopeMode } from "../../../lib/api";
+import { supabase } from "../../../lib/supabase";
 
 const ACTIVE_STATUSES = new Set(["queued", "running"]);
 
@@ -31,7 +33,18 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     runsListByProject(projectId).then(({ data, error: err }) => {
       if (cancelled) return;
       setLoading(false);
-      if (err || !data) { setError(err ?? "Failed to load runs"); return; }
+      if (err || !data) {
+        const msg = err ?? "Failed to load runs";
+        setError(msg);
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "useRuns",
+          errorMessage: msg,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "runsListByProject", projectId },
+        });
+        return;
+      }
       setRuns(data.runs);
     });
 
@@ -54,7 +67,17 @@ export function useRuns(projectId: string | null): UseRunsReturn {
   const createRun = useCallback(async (scopeMode: ScopeMode, instructions?: string) => {
     if (!projectId) return { run: null, error: "No project selected" };
     const { data, error: err } = await runsCreate(projectId, scopeMode, instructions);
-    if (err || !data) return { run: null, error: err ?? "Failed to create run" };
+    if (err || !data) {
+      const msg = err ?? "Failed to create run";
+      reportSelfHealError(supabase, {
+        category: "frontend",
+        source: "useRuns",
+        errorMessage: msg,
+        projectPrefix: "ai_qa_tester_",
+        metadata: { action: "runsCreate", projectId, scopeMode },
+      });
+      return { run: null, error: msg };
+    }
     setRuns((prev) => [data.run, ...prev]);
     return { run: data.run, error: null };
   }, [projectId]);
@@ -91,7 +114,18 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
     runsGet(runId).then(({ data, error: err }) => {
       if (cancelled) return;
       setLoading(false);
-      if (err || !data) { setError(err ?? "Failed to load run"); return; }
+      if (err || !data) {
+        const msg = err ?? "Failed to load run";
+        setError(msg);
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "useRunDetail",
+          errorMessage: msg,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "runsGet", runId },
+        });
+        return;
+      }
       setRun(data.run);
       setSteps(data.steps);
       setLogs(data.logs);

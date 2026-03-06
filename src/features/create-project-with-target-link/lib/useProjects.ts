@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { projectsList, projectsCreate } from "../../../lib/api";
 import type { Project } from "../../../lib/api";
+import { supabase } from "../../../lib/supabase";
 
 interface UseProjectsReturn {
   projects: Project[];
@@ -36,7 +38,15 @@ export function useProjects(): UseProjectsReturn {
       if (cancelled) return;
       setLoading(false);
       if (err || !data) {
-        setError(err ?? "Failed to load projects");
+        const msg = err ?? "Failed to load projects";
+        setError(msg);
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "useProjects",
+          errorMessage: msg,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "projectsList" },
+        });
         return;
       }
       setProjects(data.projects);
@@ -50,7 +60,15 @@ export function useProjects(): UseProjectsReturn {
       const { data, error: err } = await projectsCreate(targetUrl, name);
 
       if (err || !data) {
-        return { project: null, existed: false, error: err ?? "Failed to create project" };
+        const msg = err ?? "Failed to create project";
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "useProjects",
+          errorMessage: msg,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "projectsCreate" },
+        });
+        return { project: null, existed: false, error: msg };
       }
 
       const { project, existed } = data;
