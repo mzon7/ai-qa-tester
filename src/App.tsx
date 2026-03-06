@@ -1,11 +1,16 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute, AuthCallback } from "@mzon7/zon-incubator-sdk/auth";
 import { supabase } from "./lib/supabase";
+import AuthGate from "./features/session-handling-and-protected-routes/components/AuthGate";
+import { useAuthStateListener } from "./features/session-handling-and-protected-routes/lib/useAuthStateListener";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 
-export default function App() {
+function AppRoutes() {
+  // Clears sensitive localStorage keys when user signs out
+  useAuthStateListener();
+
   return (
     <Routes>
       {/* Public / auth routes — redirect to /home if already logged in */}
@@ -47,5 +52,17 @@ export default function App() {
       {/* Default */}
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
+  );
+}
+
+/**
+ * AuthGate wraps AppRoutes so the entire route tree waits for the Supabase
+ * session to resolve before rendering — preventing auth-state flicker on load.
+ */
+export default function App() {
+  return (
+    <AuthGate>
+      <AppRoutes />
+    </AuthGate>
   );
 }
