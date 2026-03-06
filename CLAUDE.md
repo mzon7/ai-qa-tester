@@ -47,3 +47,65 @@
   - `import { createProjectClient, dbTable, validateEnv, callEdgeFunction } from '@mzon7/zon-incubator-sdk'`
   - `import { AuthProvider, useAuth, ProtectedRoute, AuthCallback } from '@mzon7/zon-incubator-sdk/auth'`
 - The Supabase client and dbTable helper are already configured in `src/lib/supabase.ts`
+
+## Project Context
+
+## AI QA Tester — Coding Conventions (for Claude)
+
+### FILE STRUCTURE (mandatory)
+- Every feature lives in:  
+  `src/features/<feature-name>/components/`, `src/features/<feature-name>/lib/`, `src/features/<feature-name>/<feature-name>.test.ts`
+- Route files are thin wrappers only:
+  - `src/pages/*.tsx` imports + composes from `src/features/*`
+  - Any API/edge callers live in `src/lib/api.ts` (typed wrappers), not in pages.
+
+### API RESPONSE SHAPE (mandatory)
+- All edge/API routes return: `{ data: T, error: string | null }`
+- Client wrappers in `src/lib/api.ts` must preserve this shape and type it.
+
+### DB / SUPABASE (mandatory)
+- Use Supabase **server client** in edge/API routes; **browser client** in components.
+- Every query must be scoped by tenant key:
+  - This project uses `user_id` on most tables (treat as the scoping key).
+  - If an `org_id` is introduced later, scope by it everywhere.
+
+### NO NEW LIBRARIES (mandatory)
+- Do not add dependencies without explicit user approval.
+
+---
+
+## Data Model (Supabase Postgres)
+- **qa_projects**: `id`, `user_id`, `name?`, `target_url`, timestamps  
+  - 1 project → many runs
+- **qa_runs**: `id`, `project_id`, `user_id`, `status` (`queued|running|passed|failed|canceled`),  
+  `scope_mode` (`everything|instructions`), `instructions?`, timing fields, `summary?`, `error?`
+- **qa_run_steps**: `id`, `run_id`, `idx`, `title`, `expected`, `status` (`pending|running|passed|failed|skipped`), `notes`, timing fields
+- **qa_run_logs**: `id`, `run_id`, `ts`, `level` (`info|warn|error`), `message`, `step_id?`
+- **qa_artifacts**: `id`, `run_id`, `step_id?`, `type` (`screenshot|video|trace|console|network|log`), `storage_path`, `mime_type`, `created_at`
+- **qa_conversations**: `id`, `user_id`, `title?`, `memory_enabled`, timestamps
+- **qa_messages**: `id`, `conversation_id`, `user_id`, `role` (`user|assistant|system|tool`), `content`, `created_at`, `meta` (jsonb)
+- **qa_settings**: `user_id` (PK), `llm_provider`, `llm_api_key_encrypted`, `memory_retention_days`, timestamps
+
+## Integrations / External Services
+- **ai-assistant-core** is wrapped only via `src/lib/aiAssistant.ts` (no direct usage elsewhere).
+- **LLM calls happen only in edge functions**; client never sends provider keys to third parties.
+- **Supabase Storage** bucket: `qa-artifacts` (private)
+  - Client obtains artifact URLs via `artifacts_signed_url` edge function only.
+
+## Edge Functions (call via `callEdgeFunction` wrappers)
+- Chat: `chat_stream` (chunked streaming: tokens + tool events)
+- Projects: `projects_create`, `projects_list`, `projects_get`
+- Runs: `runs_create`, `runs_get`, `runs_list_by_project`, `runs_rerun`
+- Streaming: `runs_stream` (SSE for status/log/step updates)
+- Settings/memory: `settings_save_keys`, `settings_validate_keys`, `settings_get`, `memory_clear`
+- Artifacts: `artifacts_signed_url`
+
+## Frontend State + Streaming
+- **TanStack Query** for all server state (projects, runs, messages, settings).
+- **Zustand** only for cross-page UI state (modals/toasts) via `src/state/stores/useUiStore.ts`.
+- Live run updates use **SSE/EventSource** via `src/lib/sse.ts`; on completion, invalidate relevant queries.
+
+## Security / Validation (project-specific)
+- Validate `target_url` with allowlist `http/https`; block localhost/private IP ranges (use `src/lib/validators.ts`).
+- Rate limiting is enforced in edge functions for run creation + chat (assume it exists; don’t bypass with client retries).
+- Artifact access is always via signed URLs; never expose `storage_path` directly in UI links.
