@@ -37,11 +37,21 @@
 
 ## Architecture: Frontend/Backend Separation
 - NEVER call external APIs (AI, payment, etc.) directly from browser/client code
-- All external API calls MUST go through server-side routes (Supabase Edge Functions)
+- All external API calls MUST go through server-side routes (Supabase Edge Functions or server-side scripts)
 - Use `callEdgeFunction()` from @mzon7/zon-incubator-sdk to call edge functions
 - API keys must NEVER be exposed client-side (no VITE_ prefix for secrets)
 - For long-running operations (AI calls, processing): write a task row to DB, process server-side, client polls for results
 - DB writes that must not be lost should go through API routes, not direct client Supabase calls
+
+## When Edge Functions Are Not Enough
+- Edge functions (Deno/V8 isolates) CANNOT run binaries, spawn processes, or use tools like Playwright/Puppeteer
+- If a feature requires capabilities beyond edge functions (headless browsers, long-running processes, system binaries, large file processing):
+  1. Create a server-side script in the project repo (e.g. `server/button-scan.ts`) that runs on the project's Linux server
+  2. Use Node.js with npm packages (Playwright, Puppeteer, etc.) — install what you need
+  3. The script can be triggered via a simple HTTP server (Express/Fastify), a cron job, or a CLI command
+  4. Store results in Supabase (same DB, same prefixed tables) so the frontend can read them
+  5. For the frontend to trigger the script: create an edge function that SSHs or HTTP-calls the server, or use a DB-polling pattern (insert a task row, server picks it up)
+- Do NOT silently downgrade to a weaker approach (e.g. HTML parsing instead of real browser testing) — provision the infrastructure you need
 
 ## SDK Usage
 - This project uses `@mzon7/zon-incubator-sdk` — import from it, do NOT rewrite these utilities:
