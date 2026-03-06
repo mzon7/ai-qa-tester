@@ -6,6 +6,7 @@ import { useAuthStateListener } from "./features/session-handling-and-protected-
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
+import SettingsPage from "./pages/SettingsPage";
 
 function AppRoutes() {
   // Clears sensitive localStorage keys when user signs out
@@ -27,6 +28,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Settings — protected */}
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />

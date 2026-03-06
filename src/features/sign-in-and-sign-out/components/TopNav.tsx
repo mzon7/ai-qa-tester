@@ -39,13 +39,29 @@ export default function TopNav() {
         ))}
       </nav>
 
-      {/* User + sign out */}
+      {/* User + settings + sign out */}
       <div className="topnav-user">
         {user?.email && (
           <span className="topnav-email" title={user.email}>
             {user.email}
           </span>
         )}
+        <Link
+          to="/settings"
+          className={`topnav-settings${pathname === "/settings" ? " topnav-settings-active" : ""}`}
+          aria-label="Integrations & API keys"
+          title="Integrations & API keys"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="2.2" stroke="currentColor" strokeWidth="1.3" />
+            <path
+              d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06"
+              stroke="currentColor"
+              strokeWidth="1.3"
+              strokeLinecap="round"
+            />
+          </svg>
+        </Link>
         <button
           onClick={signOut}
           className="topnav-signout"

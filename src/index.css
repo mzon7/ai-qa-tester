@@ -559,3 +559,289 @@ body {
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
+
+/* ─── TopNav settings icon ───────────────────────────────── */
+.topnav-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s, background 0.15s, border-color 0.15s, transform 0.2s;
+  flex-shrink: 0;
+}
+.topnav-settings:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+  border-color: rgba(255,255,255,0.12);
+}
+.topnav-settings-active {
+  color: var(--primary-light);
+  background: rgba(14, 103, 53, 0.12);
+  border-color: rgba(14, 103, 53, 0.3);
+}
+.topnav-settings:hover svg {
+  animation: gear-spin 1s linear infinite;
+}
+@keyframes gear-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(90deg); }
+}
+
+/* ─── Settings page ──────────────────────────────────────── */
+.settings-page {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.settings-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+.settings-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--primary-light);
+  flex-shrink: 0;
+  box-shadow: var(--nm-shadow);
+}
+.settings-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.01em;
+}
+.settings-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Settings card */
+.settings-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.75rem;
+  box-shadow: var(--nm-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.settings-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.settings-card-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary-light);
+  background: rgba(14, 103, 53, 0.15);
+  border: 1px solid rgba(14, 103, 53, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.settings-card-description {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.55;
+}
+
+/* Settings form */
+.settings-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.settings-field { display: flex; flex-direction: column; gap: 0.5rem; }
+.settings-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.settings-field-hint {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* Provider grid */
+.settings-provider-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.settings-provider-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  text-align: left;
+  box-shadow: var(--nm-btn);
+}
+.settings-provider-btn:hover {
+  background: var(--surface-hover);
+  border-color: rgba(255,255,255,0.1);
+}
+.settings-provider-btn-active {
+  border-color: var(--primary-light);
+  background: rgba(14, 103, 53, 0.08);
+  box-shadow: var(--nm-btn), 0 0 12px var(--primary-glow);
+}
+.settings-provider-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-provider-hint {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-family: monospace;
+}
+
+/* Key status */
+.settings-key-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(14, 103, 53, 0.06);
+  border: 1px solid rgba(14, 103, 53, 0.2);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+}
+.settings-key-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  box-shadow: 0 0 6px var(--primary-light);
+  flex-shrink: 0;
+}
+.settings-key-hint {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.settings-key-age {
+  margin-left: auto;
+  font-size: 0.73rem;
+  color: var(--text-faint);
+}
+
+/* Key input row */
+.settings-key-row { display: flex; gap: 0.5rem; }
+.settings-key-input { flex: 1; font-family: monospace; letter-spacing: 0.08em; }
+
+/* Validation results */
+.settings-validation-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--primary-light);
+  background: rgba(14, 103, 53, 0.08);
+  border: 1px solid rgba(14, 103, 53, 0.25);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+.settings-validation-err {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+}
+
+/* Actions row */
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.settings-btn-save { min-width: 120px; }
+.settings-btn-validate {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 0.7rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: var(--nm-btn);
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.settings-btn-validate:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.1);
+  background: var(--surface-hover);
+}
+.settings-btn-validate:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Loading state */
+.settings-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 1rem 0;
+}
+
+/* Info strip */
+.settings-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+.settings-info svg { flex-shrink: 0; margin-top: 1px; }
