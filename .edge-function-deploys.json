@@ -6,5 +6,6 @@
   "runs_list_by_project": "707d2621fa96b87502bf44df94e05541e96d7064",
   "settings_get": "3053f15d1b3bd1f42206dfea72277689d6ed4f8b",
   "settings_save_keys": "b2f8cf08d8a3ab4b93cc1b97c2fb4035de3562d8",
-  "settings_validate_keys": "578be98e1a7487bf53e8f843f2dacaf3c55162b4"
+  "settings_validate_keys": "578be98e1a7487bf53e8f843f2dacaf3c55162b4",
+  "button_scan": "795cc8f76b01d9b06429668e1535f84260270f27"
 }
