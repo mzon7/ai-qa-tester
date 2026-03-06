@@ -1,0 +1,10 @@
+{
+  "projects_create": "9a39287a554bd9d354c8b6d95368ab27460dc6c2",
+  "projects_list": "8045040358b420b6a7fb1fd1f1560ff682c1261c",
+  "runs_create": "8045040358b420b6a7fb1fd1f1560ff682c1261c",
+  "runs_get": "8045040358b420b6a7fb1fd1f1560ff682c1261c",
+  "runs_list_by_project": "8045040358b420b6a7fb1fd1f1560ff682c1261c",
+  "settings_get": "0a56d03ed09883c423efe86bbbaae215c8de3f48",
+  "settings_save_keys": "0a56d03ed09883c423efe86bbbaae215c8de3f48",
+  "settings_validate_keys": "0a56d03ed09883c423efe86bbbaae215c8de3f48"
+}
