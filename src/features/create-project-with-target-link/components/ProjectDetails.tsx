@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Project, Run, RunStep, ScopeMode } from "../../../lib/api";
-import { buttonScan } from "../../../lib/api";
+import { buttonScan, runsFeaturePlan, featureExecutor } from "../../../lib/api";
 import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { supabase } from "../../../lib/supabase";
 import { useRuns, useRunDetail } from "../../projects-list-with-testing-status/lib/useRuns";
@@ -34,6 +34,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   const [formError, setFormError] = useState<string | null>(null);
   const [rerunLoading, setRerunLoading] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
+  const [executorLoading, setExecutorLoading] = useState(false);
 
   const activeRun = latestRun;
   const hasActiveRun = activeRun?.status === "queued" || activeRun?.status === "running";
@@ -62,6 +63,38 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
     refresh();
   };
 
+  // ── Feature test: plan → execute ───────────────────────────────────────────
+  const triggerFeatureTest = async (runId: string) => {
+    setExecutorLoading(true);
+    // Step 1: planner generates structured test steps (synchronous AI call)
+    const { error: planErr } = await runsFeaturePlan(runId);
+    if (planErr) {
+      reportSelfHealError(supabase, {
+        category: "frontend",
+        source: "ProjectDetails",
+        errorMessage: planErr,
+        projectPrefix: "ai_qa_tester_",
+        metadata: { action: "runsFeaturePlan", runId },
+      });
+      setExecutorLoading(false);
+      refresh();
+      return;
+    }
+    // Step 2: executor runs planned steps with Playwright (async 202)
+    const { error: execErr } = await featureExecutor(runId);
+    setExecutorLoading(false);
+    if (execErr) {
+      reportSelfHealError(supabase, {
+        category: "frontend",
+        source: "ProjectDetails",
+        errorMessage: execErr,
+        projectPrefix: "ai_qa_tester_",
+        metadata: { action: "featureExecutor", runId },
+      });
+    }
+    refresh();
+  };
+
   const handleSubmit = async (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => {
     setFormLoading(true);
     setFormError(null);
@@ -70,9 +103,15 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
     if (error) { setFormError(error); return; }
     setSelectedRun(null); // focus new run
 
-    // Auto-trigger button scan for "Test everything" scope
-    if (scopeMode === "everything" && run) {
-      triggerButtonScan(run.id);
+    // Auto-trigger based on scope and feature_description
+    if (run) {
+      if (featureDescription) {
+        // Feature description provided → run planner + executor
+        triggerFeatureTest(run.id);
+      } else if (scopeMode === "everything") {
+        // No feature description → button scan
+        triggerButtonScan(run.id);
+      }
     }
   };
 
@@ -81,13 +120,15 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
     setRerunLoading(true);
     const { run, error } = await createRun(
       focusedRun.scope_mode,
-      focusedRun.instructions ?? undefined
+      focusedRun.instructions ?? undefined,
+      focusedRun.feature_description ?? undefined,
     );
     setRerunLoading(false);
-    if (!error) {
+    if (!error && run) {
       setSelectedRun(null);
-      // Re-trigger button scan for everything scope reruns
-      if (focusedRun.scope_mode === "everything" && run) {
+      if (focusedRun.feature_description) {
+        triggerFeatureTest(run.id);
+      } else if (focusedRun.scope_mode === "everything") {
         triggerButtonScan(run.id);
       }
     }

@@ -163,3 +163,72 @@ describe("FeatureDescriptionInput", () => {
     expect(screen.getByText(`${expected} left`)).toBeInTheDocument();
   });
 });
+
+// ─── featureExecutor API wrapper ──────────────────────────────────────────────
+
+vi.mock("../../lib/supabase", () => ({
+  supabase: {},
+  dbTable: (name: string) => `ai_qa_tester_${name}`,
+}));
+
+vi.mock("@mzon7/zon-incubator-sdk", () => ({
+  callEdgeFunction: vi.fn(),
+  reportSelfHealError: vi.fn(),
+}));
+
+vi.mock("../../lib/api", () => ({
+  featureExecutor: vi.fn(),
+  runsFeaturePlan: vi.fn(),
+}));
+
+import * as api from "../../lib/api";
+
+describe("featureExecutor API wrapper", () => {
+  it("calls feature_executor with run_id", async () => {
+    vi.mocked(api.featureExecutor).mockResolvedValue({
+      data: { accepted: true, run_id: "run-1", message: "started" },
+      error: null,
+    });
+    const result = await api.featureExecutor("run-1");
+    expect(api.featureExecutor).toHaveBeenCalledWith("run-1");
+    expect(result.data?.accepted).toBe(true);
+    expect(result.error).toBeNull();
+  });
+
+  it("returns error when server returns error", async () => {
+    vi.mocked(api.featureExecutor).mockResolvedValue({
+      data: null,
+      error: "Playwright server not configured",
+    });
+    const result = await api.featureExecutor("run-1");
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Playwright server not configured");
+  });
+});
+
+describe("runsFeaturePlan API wrapper", () => {
+  it("calls feature_plan with run_id and returns step count", async () => {
+    vi.mocked(api.runsFeaturePlan).mockResolvedValue({
+      data: {
+        run_id: "run-1",
+        steps_created: 5,
+        steps: [],
+      },
+      error: null,
+    });
+    const result = await api.runsFeaturePlan("run-1");
+    expect(api.runsFeaturePlan).toHaveBeenCalledWith("run-1");
+    expect(result.data?.steps_created).toBe(5);
+    expect(result.error).toBeNull();
+  });
+
+  it("returns error when planning fails", async () => {
+    vi.mocked(api.runsFeaturePlan).mockResolvedValue({
+      data: null,
+      error: "Run has no feature description",
+    });
+    const result = await api.runsFeaturePlan("run-2");
+    expect(result.data).toBeNull();
+    expect(result.error).toBe("Run has no feature description");
+  });
+});

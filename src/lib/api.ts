@@ -177,6 +177,59 @@ export function runsFeaturePlan(run_id: string) {
   return callEdgeFunction<FeaturePlanResult>(supabase, "feature_plan", { run_id });
 }
 
+
+// ─── Feature Executor ─────────────────────────────────────────────────────────
+
+export interface FeatureExecutorResult {
+  accepted: boolean;
+  run_id: string;
+  message: string;
+}
+
+/**
+ * Triggers the Playwright feature-step executor for a run that already has
+ * planned qa_run_steps (populated by the feature_plan edge function).
+ * Each step is executed headlessly; failures capture screenshots as artifacts.
+ */
+export function featureExecutor(run_id: string) {
+  return callEdgeFunction<FeatureExecutorResult>(supabase, "feature_executor", { run_id });
+}
+
+// ─── Feature Report ───────────────────────────────────────────────────────────
+
+export interface ReportStepResult {
+  idx: number;
+  title: string;
+  expected: string | null;
+  observed: string | null;
+  status: string;
+  artifacts: Array<{ type: string; url: string }>;
+}
+
+export interface FeatureReportTotals {
+  total: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+}
+
+export interface FeatureReportResult {
+  run_id: string;
+  overall_status: string;
+  summary: string;
+  steps: ReportStepResult[];
+  totals: FeatureReportTotals;
+}
+
+/**
+ * Generates a structured test report for a completed feature run.
+ * Compares expected vs observed per step, attaches signed artifact URLs for
+ * failures, and uses Grok to produce a Markdown summary stored on qa_runs.summary.
+ */
+export function runsFeatureReport(run_id: string) {
+  return callEdgeFunction<FeatureReportResult>(supabase, "feature_report", { run_id });
+}
+
 // ─── Button Scan ──────────────────────────────────────────────────────────────
 
 export interface ButtonScanGroupResult {
