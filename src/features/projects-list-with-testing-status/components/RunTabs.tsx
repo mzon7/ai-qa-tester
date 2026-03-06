@@ -15,7 +15,7 @@ interface RunTabsProps {
   onSelectRun: (run: Run) => void;
 }
 
-export default function RunTabs({ runs, runsLoading, activeRunId, onSelectRun }: RunTabsProps) {
+export default function RunTabs({ runs, runsLoading: _runsLoading, activeRunId, onSelectRun }: RunTabsProps) {
   const [tab, setTab] = useState<Tab>("history");
   const { steps, logs, loading: detailLoading } = useRunDetail(
     (tab === "steps" || tab === "logs") ? activeRunId : null
