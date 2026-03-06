@@ -34,7 +34,7 @@ function timeAgo(iso: string) {
 }
 
 export default function ProjectsList({
-  projects,
+  projects = [],
   loading,
   error,
   selectedId,
