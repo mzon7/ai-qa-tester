@@ -155,6 +155,28 @@ export function runsGet(run_id: string) {
   return callEdgeFunction<GetRunResult>(supabase, "runs_get", { run_id });
 }
 
+// ─── Feature Plan ─────────────────────────────────────────────────────────────
+
+export interface FeaturePlanStep {
+  action: string;
+  assertion: string;
+  selector_hints: string[];
+}
+
+export interface FeaturePlanResult {
+  run_id: string;
+  steps_created: number;
+  steps: FeaturePlanStep[];
+}
+
+/**
+ * Uses Grok to convert the run's feature_description into a bounded, structured
+ * test plan (≤ 10 steps) and stores each step as a "pending" qa_run_step row.
+ */
+export function runsFeaturePlan(run_id: string) {
+  return callEdgeFunction<FeaturePlanResult>(supabase, "feature_plan", { run_id });
+}
+
 // ─── Button Scan ──────────────────────────────────────────────────────────────
 
 export interface ButtonScanGroupResult {
