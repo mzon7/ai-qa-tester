@@ -147,3 +147,27 @@ export function runsListByProject(project_id: string) {
 export function runsGet(run_id: string) {
   return callEdgeFunction<GetRunResult>(supabase, "runs_get", { run_id });
 }
+
+// ─── Button Scan ──────────────────────────────────────────────────────────────
+
+export interface ButtonScanGroupResult {
+  name: string;
+  status: "passed" | "failed" | "skipped";
+  notes: string;
+}
+
+export interface ButtonScanResult {
+  status: "passed" | "failed";
+  summary: string;
+  elements_found: number;
+  groups: ButtonScanGroupResult[];
+}
+
+/**
+ * Triggers a button smoke scan for a queued run.
+ * Fetches the target page HTML, analyzes all interactive elements with AI,
+ * creates run steps + logs, and marks the run as passed or failed.
+ */
+export function buttonScan(run_id: string) {
+  return callEdgeFunction<ButtonScanResult>(supabase, "button_scan", { run_id });
+}
