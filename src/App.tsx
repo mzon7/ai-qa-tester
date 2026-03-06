@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 import SettingsPage from "./pages/SettingsPage";
+import ProjectsPage from "./pages/ProjectsPage";
 
 function AppRoutes() {
   // Clears sensitive localStorage keys when user signs out
@@ -42,20 +43,12 @@ function AppRoutes() {
         }
       />
 
-      {/* Projects — protected; full page to be built in a later feature */}
+      {/* Projects — protected */}
       <Route
         path="/projects"
         element={
           <ProtectedRoute>
-            <Navigate to="/home" replace />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/projects/*"
-        element={
-          <ProtectedRoute>
-            <Navigate to="/projects" replace />
+            <ProjectsPage />
           </ProtectedRoute>
         }
       />
