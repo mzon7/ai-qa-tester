@@ -33,11 +33,31 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+/** True when a queued run is blocked pending user clarification of the description. */
+function isNeedsInput(run: Run): boolean {
+  return run.status === "queued" && (
+    (run.summary?.startsWith("needs_input:") ?? false) ||
+    (run.error?.startsWith("needs_input:") ?? false)
+  );
+}
+
+/** Strip the "needs_input: " prefix for display. */
+function needsInputMessage(run: Run): string {
+  const raw = run.summary?.startsWith("needs_input:")
+    ? run.summary
+    : run.error ?? "";
+  return raw.replace(/^needs_input:\s*/i, "");
+}
+
 export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatusPanelProps) {
   const cfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.canceled;
   const dur = duration(run);
-  const isActive = run.status === "queued" || run.status === "running";
+  const needsInput = isNeedsInput(run);
+  // Suppress the "Waiting to start…" pulse when we're actually blocked on input
+  const isActive = !needsInput && (run.status === "queued" || run.status === "running");
   const isDone = run.status === "passed" || run.status === "failed" || run.status === "canceled";
+  // Don't show the plain summary when it's a needs_input message (shown separately below)
+  const plainSummary = !needsInput && run.summary ? run.summary : null;
 
   return (
     <div className="rsp-panel">
@@ -79,8 +99,22 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
         </div>
       )}
 
-      {run.summary && (
-        <p className="rsp-summary">{run.summary}</p>
+      {/* needs_input: clarification required — shown instead of the pulse animation */}
+      {needsInput && (
+        <div className="rsp-error-box rsp-needs-input" role="alert">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+            <circle cx="6.5" cy="6.5" r="5.5" stroke="currentColor" strokeWidth="1.2" />
+            <line x1="6.5" y1="3.5" x2="6.5" y2="7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <circle cx="6.5" cy="9" r="0.7" fill="currentColor" />
+          </svg>
+          <span>
+            <strong>More detail needed:</strong> {needsInputMessage(run)}
+          </span>
+        </div>
+      )}
+
+      {plainSummary && (
+        <p className="rsp-summary">{plainSummary}</p>
       )}
 
       {run.error && run.status === "failed" && (

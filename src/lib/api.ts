@@ -97,7 +97,7 @@ export interface Run {
   status: RunStatus;
   scope_mode: ScopeMode;
   instructions: string | null;
-  feature_description: string | null;
+  feature_description?: string | null | undefined;
   started_at: string | null;
   completed_at: string | null;
   summary: string | null;

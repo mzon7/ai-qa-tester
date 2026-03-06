@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Project, Run, RunStep, ScopeMode } from "../../../lib/api";
-import { buttonScan, runsFeaturePlan, featureExecutor } from "../../../lib/api";
+import { buttonScan, runsFeaturePlan, featureExecutor, runsFeatureReport } from "../../../lib/api";
 import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { supabase } from "../../../lib/supabase";
 import { useRuns, useRunDetail } from "../../projects-list-with-testing-status/lib/useRuns";
@@ -34,7 +34,8 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   const [formError, setFormError] = useState<string | null>(null);
   const [rerunLoading, setRerunLoading] = useState(false);
   const [scanLoading, setScanLoading] = useState(false);
-  const [executorLoading, setExecutorLoading] = useState(false);
+  // Track which run IDs have already had their report generated so we don't re-fire
+  const reportedRunIds = useRef<Set<string>>(new Set());
 
   const activeRun = latestRun;
   const hasActiveRun = activeRun?.status === "queued" || activeRun?.status === "running";
@@ -46,6 +47,24 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   const { steps: focusedSteps } = useRunDetail(
     focusedRun?.scope_mode === "everything" ? (focusedRun?.id ?? null) : null
   );
+
+  // ── Auto-generate Grok report when a feature run reaches a terminal state ────
+  // The Playwright executor writes a plain-text summary; this upgrades it to
+  // a full Markdown report (expected vs observed, failure links) via the LLM.
+  useEffect(() => {
+    const run = latestRun;
+    if (!run) return;
+    if (!run.feature_description) return;
+    if (run.status !== "passed" && run.status !== "failed") return;
+    if (reportedRunIds.current.has(run.id)) return;
+    // Skip if the LLM report is already there (starts with ** from Markdown heading)
+    if (run.summary?.startsWith("**") || run.summary?.startsWith("#")) return;
+    // Skip needs_input runs — they were never executed
+    if (run.summary?.startsWith("needs_input:")) return;
+
+    reportedRunIds.current.add(run.id);
+    runsFeatureReport(run.id).then(() => refresh()).catch(() => {});
+  }, [latestRun?.id, latestRun?.status, latestRun?.summary, refresh]);
 
   const triggerButtonScan = async (runId: string) => {
     setScanLoading(true);
@@ -65,24 +84,27 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
 
   // ── Feature test: plan → execute ───────────────────────────────────────────
   const triggerFeatureTest = async (runId: string) => {
-    setExecutorLoading(true);
-    // Step 1: planner generates structured test steps (synchronous AI call)
+    // Step 1: planner generates structured test steps (synchronous AI call).
+    // A 422 "needs_input:" response means the description was too vague —
+    // the run stays queued and the UI will surface the clarification message
+    // via RunStatusPanel. This is not a system error, so don't self-heal-report it.
     const { error: planErr } = await runsFeaturePlan(runId);
     if (planErr) {
-      reportSelfHealError(supabase, {
-        category: "frontend",
-        source: "ProjectDetails",
-        errorMessage: planErr,
-        projectPrefix: "ai_qa_tester_",
-        metadata: { action: "runsFeaturePlan", runId },
-      });
-      setExecutorLoading(false);
+      const isUserInputIssue = planErr.startsWith("needs_input:");
+      if (!isUserInputIssue) {
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "ProjectDetails",
+          errorMessage: planErr,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "runsFeaturePlan", runId },
+        });
+      }
       refresh();
       return;
     }
     // Step 2: executor runs planned steps with Playwright (async 202)
     const { error: execErr } = await featureExecutor(runId);
-    setExecutorLoading(false);
     if (execErr) {
       reportSelfHealError(supabase, {
         category: "frontend",
