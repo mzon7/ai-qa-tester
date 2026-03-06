@@ -1654,4 +1654,187 @@ body {
 .rlog-info .rlog-level  { color: #60a5fa; }
 .rlog-warn .rlog-level  { color: #fbbf24; }
 .rlog-error .rlog-level { color: var(--error); }
+
+/* ─── Button Scan Panel (bsp-*) ─────────────────────────── */
+.bsp-panel {
+  background: var(--bg-card);
+  border: 1px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: var(--nm-shadow);
+}
+
+.bsp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.bsp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bsp-icon {
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+
+.bsp-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Status dots */
+.bsp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.bsp-dot-passed { background: #34d399; }
+.bsp-dot-failed { background: var(--error); }
+.bsp-dot-idle   { background: var(--text-faint); }
+
+.bsp-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--secondary);
+  display: inline-block;
+  animation: bsp-pulse 1.4s ease-in-out infinite;
+}
+@keyframes bsp-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+/* Trigger button */
+.bsp-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 7px;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  letter-spacing: 0.02em;
+}
+.bsp-trigger-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* Running state */
+.bsp-running {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+}
+
+.bsp-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(139, 92, 246, 0.2);
+  border-top-color: var(--secondary);
+  border-radius: 50%;
+  animation: bsp-spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes bsp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.bsp-running-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Results */
+.bsp-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bsp-summary-line {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin: 0 0 0.25rem;
+}
+
+.bsp-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bsp-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.bsp-group-passed { border-color: rgba(52, 211, 153, 0.15); }
+.bsp-group-failed { border-color: rgba(248, 113, 113, 0.18); }
+.bsp-group-skipped { opacity: 0.6; }
+
+.bsp-group-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.bsp-group-icon-passed { color: #34d399; }
+.bsp-group-icon-failed { color: var(--error); }
+.bsp-group-icon-skipped { color: var(--text-faint); }
+
+.bsp-group-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.bsp-group-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bsp-group-notes {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Empty / hint states */
+.bsp-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-style: italic;
+}
+
+.bsp-hint {
+  font-size: 0.76rem;
+  color: var(--text-faint);
+  margin: 0.4rem 0 0;
+  line-height: 1.5;
+}
 .rlog-error .rlog-msg   { color: var(--error); }

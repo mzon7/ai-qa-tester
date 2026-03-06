@@ -1,9 +1,13 @@
 import { useState } from "react";
-import type { Project, Run, ScopeMode } from "../../../lib/api";
-import { useRuns } from "../../projects-list-with-testing-status/lib/useRuns";
+import type { Project, Run, RunStep, ScopeMode } from "../../../lib/api";
+import { buttonScan } from "../../../lib/api";
+import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
+import { supabase } from "../../../lib/supabase";
+import { useRuns, useRunDetail } from "../../projects-list-with-testing-status/lib/useRuns";
 import RunCreateForm from "../../projects-list-with-testing-status/components/RunCreateForm";
 import RunStatusPanel from "../../projects-list-with-testing-status/components/RunStatusPanel";
 import RunTabs from "../../projects-list-with-testing-status/components/RunTabs";
+import ButtonScanPanel from "../../test-app-buttons/components/ButtonScanPanel";
 
 interface ProjectDetailsProps {
   project: Project;
@@ -24,11 +28,12 @@ function formatDate(iso: string) {
 }
 
 export default function ProjectDetails({ project, onBack }: ProjectDetailsProps) {
-  const { runs, latestRun, loading: runsLoading, createRun } = useRuns(project.id);
+  const { runs, latestRun, loading: runsLoading, createRun, refresh } = useRuns(project.id);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [rerunLoading, setRerunLoading] = useState(false);
+  const [scanLoading, setScanLoading] = useState(false);
 
   const activeRun = latestRun;
   const hasActiveRun = activeRun?.status === "queued" || activeRun?.status === "running";
@@ -36,24 +41,56 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   // The run shown in the status panel and used for steps/logs tab
   const focusedRun = selectedRun ?? latestRun;
 
+  // Fetch steps for the focused run so ButtonScanPanel can show results
+  const { steps: focusedSteps } = useRunDetail(
+    focusedRun?.scope_mode === "everything" ? (focusedRun?.id ?? null) : null
+  );
+
+  const triggerButtonScan = async (runId: string) => {
+    setScanLoading(true);
+    const { error } = await buttonScan(runId);
+    setScanLoading(false);
+    if (error) {
+      reportSelfHealError(supabase, {
+        category: "frontend",
+        source: "ProjectDetails",
+        errorMessage: error,
+        projectPrefix: "ai_qa_tester_",
+        metadata: { action: "buttonScan", runId },
+      });
+    }
+    refresh();
+  };
+
   const handleSubmit = async (scopeMode: ScopeMode, instructions?: string) => {
     setFormLoading(true);
     setFormError(null);
-    const { error } = await createRun(scopeMode, instructions);
+    const { run, error } = await createRun(scopeMode, instructions);
     setFormLoading(false);
     if (error) { setFormError(error); return; }
     setSelectedRun(null); // focus new run
+
+    // Auto-trigger button scan for "Test everything" scope
+    if (scopeMode === "everything" && run) {
+      triggerButtonScan(run.id);
+    }
   };
 
   const handleRerun = async () => {
     if (!focusedRun) return;
     setRerunLoading(true);
-    const { error } = await createRun(
+    const { run, error } = await createRun(
       focusedRun.scope_mode,
       focusedRun.instructions ?? undefined
     );
     setRerunLoading(false);
-    if (!error) setSelectedRun(null);
+    if (!error) {
+      setSelectedRun(null);
+      // Re-trigger button scan for everything scope reruns
+      if (focusedRun.scope_mode === "everything" && run) {
+        triggerButtonScan(run.id);
+      }
+    }
   };
 
   const latestStatus = latestRun?.status ?? project.status;
@@ -122,6 +159,16 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
         error={formError}
         hasActiveRun={hasActiveRun}
       />
+
+      {/* Button scan panel — shown for "Test everything" scope runs */}
+      {focusedRun?.scope_mode === "everything" && (
+        <ButtonScanPanel
+          run={focusedRun}
+          steps={focusedSteps as RunStep[]}
+          onTriggerScan={() => triggerButtonScan(focusedRun.id)}
+          scanLoading={scanLoading}
+        />
+      )}
 
       {/* Latest / focused run status */}
       {focusedRun && (
