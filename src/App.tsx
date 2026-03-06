@@ -8,7 +8,7 @@ import HomePage from "./pages/HomePage";
 export default function App() {
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public / auth routes — redirect to /home if already logged in */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route
@@ -26,7 +26,25 @@ export default function App() {
         }
       />
 
-      {/* Default redirect */}
+      {/* Projects — protected; full page to be built in a later feature */}
+      <Route
+        path="/projects"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/home" replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/*"
+        element={
+          <ProtectedRoute>
+            <Navigate to="/projects" replace />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Default */}
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
