@@ -15,7 +15,7 @@
   curl -s -X POST "https://api.supabase.com/v1/projects/$SUPABASE_PROJECT_REF/database/query" \
     -H "Authorization: Bearer $SUPABASE_MGMT_TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"query": "SELECT tablename FROM pg_tables WHERE schemaname='"'"'public'"'"' AND tablename LIKE '"'"'ai_qa_tester_%'"'"';"}'
+    -d '{"query": "SELECT tablename FROM pg_tables WHERE schemaname='\''public'\'' AND tablename LIKE '\''ai_qa_tester_%'\'';"}'
   ```
 - Enable RLS on every new table
 - ALWAYS add a SELECT policy whenever you add any other policy — never add INSERT/UPDATE/DELETE without SELECT or data will silently disappear on refresh
@@ -46,14 +46,87 @@
 - This project uses `@mzon7/zon-incubator-sdk` — import from it, do NOT rewrite these utilities:
   - `import { createProjectClient, dbTable, validateEnv, callEdgeFunction } from '@mzon7/zon-incubator-sdk'`
   - `import { AuthProvider, useAuth, ProtectedRoute, AuthCallback } from '@mzon7/zon-incubator-sdk/auth'`
+  - `import { installFrontendErrorCapture, reportSelfHealError, withDbErrorCapture } from '@mzon7/zon-incubator-sdk'`
 - The Supabase client and dbTable helper are already configured in `src/lib/supabase.ts`
+
+## Self-Heal Error Reporting (REQUIRED)
+
+This project is monitored by the Zon AGI Incubator self-heal system. All errors MUST be reported to the shared `incubator_self_heal_errors` table.
+
+### Frontend Error Capture (ALREADY INSTALLED)
+
+`installFrontendErrorCapture(supabase, "ai_qa_tester_")` is called in `src/main.tsx`. It automatically captures `window.onerror` and `unhandledrejection` events. **Do not remove it.**
+
+### Database Error Capture
+
+For critical Supabase queries, wrap with `withDbErrorCapture` from the SDK:
+
+```typescript
+import { withDbErrorCapture } from "@mzon7/zon-incubator-sdk";
+import { supabase, dbTable } from "@/lib/supabase";
+
+// Instead of:
+const { data, error } = await supabase.from(dbTable("runs")).select("*");
+
+// Use:
+const { data, error } = await withDbErrorCapture(
+  supabase,
+  dbTable("runs"),
+  supabase.from(dbTable("runs")).select("*"),
+);
+```
+
+Use `withDbErrorCapture` for:
+- All `.insert()`, `.update()`, `.delete()` operations
+- Critical `.select()` queries that power main UI features
+- Skip for non-critical reads like analytics/optional data
+
+### Manual Error Reporting
+
+For try/catch blocks and edge function error handling, use `reportSelfHealError`:
+
+```typescript
+import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
+import { supabase } from "@/lib/supabase";
+
+try {
+  // risky operation
+} catch (err) {
+  reportSelfHealError(supabase, {
+    category: "frontend",
+    source: "ComponentName",
+    errorMessage: err.message,
+    errorStack: err.stack,
+    projectPrefix: "ai_qa_tester_",
+    metadata: { context: "what was happening" },
+  });
+}
+```
+
+### Edge Function Errors
+
+`callEdgeFunction()` from the SDK already dual-writes errors to both `incubator_edge_function_errors` and `incubator_self_heal_errors`. No extra work needed — just always use `callEdgeFunction()` instead of raw `supabase.functions.invoke()`.
+
+### Categories
+
+- `"frontend"` — React component errors, unhandled rejections, client-side failures
+- `"database"` — Supabase query failures, RLS errors, constraint violations
+- `"build_deploy"` — Build failures, typecheck errors (reported by daemon)
+- `"edge_function"` — Edge function invocation failures (auto-reported by callEdgeFunction)
+
+### Rules
+
+1. **Never swallow errors silently** — every catch block should either re-throw or call `reportSelfHealError`
+2. **Always include projectPrefix** — use `"ai_qa_tester_"` for this project
+3. **Fire-and-forget** — error reporting never blocks the caller; never awaited
+4. **Use SDK helpers** — do NOT write raw inserts to `incubator_self_heal_errors`; use the SDK functions
 
 ## Project Context
 
 ## AI QA Tester — Coding Conventions (for Claude)
 
 ### FILE STRUCTURE (mandatory)
-- Every feature lives in:  
+- Every feature lives in:
   `src/features/<feature-name>/components/`, `src/features/<feature-name>/lib/`, `src/features/<feature-name>/<feature-name>.test.ts`
 - Route files are thin wrappers only:
   - `src/pages/*.tsx` imports + composes from `src/features/*`
@@ -75,9 +148,9 @@
 ---
 
 ## Data Model (Supabase Postgres)
-- **qa_projects**: `id`, `user_id`, `name?`, `target_url`, timestamps  
+- **qa_projects**: `id`, `user_id`, `name?`, `target_url`, timestamps
   - 1 project → many runs
-- **qa_runs**: `id`, `project_id`, `user_id`, `status` (`queued|running|passed|failed|canceled`),  
+- **qa_runs**: `id`, `project_id`, `user_id`, `status` (`queued|running|passed|failed|canceled`),
   `scope_mode` (`everything|instructions`), `instructions?`, timing fields, `summary?`, `error?`
 - **qa_run_steps**: `id`, `run_id`, `idx`, `title`, `expected`, `status` (`pending|running|passed|failed|skipped`), `notes`, timing fields
 - **qa_run_logs**: `id`, `run_id`, `ts`, `level` (`info|warn|error`), `message`, `step_id?`
@@ -107,7 +180,7 @@
 
 ## Security / Validation (project-specific)
 - Validate `target_url` with allowlist `http/https`; block localhost/private IP ranges (use `src/lib/validators.ts`).
-- Rate limiting is enforced in edge functions for run creation + chat (assume it exists; don’t bypass with client retries).
+- Rate limiting is enforced in edge functions for run creation + chat (assume it exists; don't bypass with client retries).
 - Artifact access is always via signed URLs; never expose `storage_path` directly in UI links.
 
 ## Edge Function Conventions
