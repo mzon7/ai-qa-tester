@@ -62,10 +62,10 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
     refresh();
   };
 
-  const handleSubmit = async (scopeMode: ScopeMode, instructions?: string) => {
+  const handleSubmit = async (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => {
     setFormLoading(true);
     setFormError(null);
-    const { run, error } = await createRun(scopeMode, instructions);
+    const { run, error } = await createRun(scopeMode, instructions, featureDescription);
     setFormLoading(false);
     if (error) { setFormError(error); return; }
     setSelectedRun(null); // focus new run

@@ -195,7 +195,8 @@ describe("RunCreateForm", () => {
       hasActiveRun: false,
     }));
     await user.click(screen.getByText("Custom instructions"));
-    expect(screen.getByRole("textbox")).toBeInTheDocument();
+    // Both the instructions textarea and the feature-description textarea are now rendered
+    expect(screen.getAllByRole("textbox").length).toBeGreaterThanOrEqual(2);
   });
 
   it("calls onSubmit with 'everything' scope mode by default", async () => {
@@ -208,7 +209,7 @@ describe("RunCreateForm", () => {
       hasActiveRun: false,
     }));
     await user.click(screen.getByText("Start test run"));
-    expect(onSubmit).toHaveBeenCalledWith("everything", undefined);
+    expect(onSubmit).toHaveBeenCalledWith("everything", undefined, undefined);
   });
 
   it("shows validation error when submitting instructions scope with empty text", async () => {

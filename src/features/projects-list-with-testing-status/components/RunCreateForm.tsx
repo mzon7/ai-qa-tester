@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { ScopeMode } from "../../../lib/api";
+import FeatureDescriptionInput from "../../test-app-feature/components/FeatureDescriptionInput";
+import { validateFeatureDescription, normaliseFeatureDescription } from "../../test-app-feature/lib/featureDescriptionUtils";
 
 interface RunCreateFormProps {
-  onSubmit: (scopeMode: ScopeMode, instructions?: string) => Promise<void>;
+  onSubmit: (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => Promise<void>;
   loading: boolean;
   error: string | null;
   hasActiveRun: boolean;
@@ -11,6 +13,7 @@ interface RunCreateFormProps {
 export default function RunCreateForm({ onSubmit, loading, error, hasActiveRun }: RunCreateFormProps) {
   const [scopeMode, setScopeMode] = useState<ScopeMode>("everything");
   const [instructions, setInstructions] = useState("");
+  const [featureDescription, setFeatureDescription] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,8 +22,14 @@ export default function RunCreateForm({ onSubmit, loading, error, hasActiveRun }
       setLocalError("Please describe what to test.");
       return;
     }
+    const descErr = validateFeatureDescription(featureDescription);
+    if (descErr) { setLocalError(descErr); return; }
     setLocalError(null);
-    await onSubmit(scopeMode, scopeMode === "instructions" ? instructions.trim() : undefined);
+    await onSubmit(
+      scopeMode,
+      scopeMode === "instructions" ? instructions.trim() : undefined,
+      normaliseFeatureDescription(featureDescription),
+    );
   };
 
   const displayError = localError ?? error;
@@ -64,6 +73,13 @@ export default function RunCreateForm({ onSubmit, loading, error, hasActiveRun }
           autoFocus
         />
       )}
+
+      {/* Feature description — optional, helps AI assess correctness */}
+      <FeatureDescriptionInput
+        value={featureDescription}
+        onChange={setFeatureDescription}
+        disabled={loading || hasActiveRun}
+      />
 
       {displayError && (
         <p className="rcf-error" role="alert">{displayError}</p>

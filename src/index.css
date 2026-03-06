@@ -1393,6 +1393,64 @@ body {
 .rcf-submit:hover:not(:disabled) { background: var(--primary-light); }
 .rcf-submit:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ─── FeatureDescriptionInput ────────────────────────────── */
+.fdi-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.fdi-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.fdi-optional {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 0.6;
+}
+.fdi-textarea {
+  background: var(--bg);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.7rem;
+  resize: vertical;
+  transition: border-color 0.15s;
+  font-family: inherit;
+  min-height: 80px;
+}
+.fdi-textarea:focus { outline: none; border-color: var(--primary); }
+.fdi-textarea:disabled { opacity: 0.5; cursor: not-allowed; }
+.fdi-textarea-error { border-color: var(--error) !important; }
+.fdi-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.fdi-error {
+  font-size: 0.75rem;
+  color: var(--error);
+  margin: 0;
+  flex: 1;
+}
+.fdi-counter {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.fdi-counter-warn { color: var(--error); opacity: 1; }
+
 /* ─── RunStatusPanel ─────────────────────────────────────── */
 .rsp-panel {
   display: flex;
@@ -1654,6 +1712,7 @@ body {
 .rlog-info .rlog-level  { color: #60a5fa; }
 .rlog-warn .rlog-level  { color: #fbbf24; }
 .rlog-error .rlog-level { color: var(--error); }
+
 
 /* ─── Button Scan Panel (bsp-*) ─────────────────────────── */
 .bsp-panel {

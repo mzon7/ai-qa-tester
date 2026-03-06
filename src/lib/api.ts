@@ -97,6 +97,7 @@ export interface Run {
   status: RunStatus;
   scope_mode: ScopeMode;
   instructions: string | null;
+  feature_description: string | null;
   started_at: string | null;
   completed_at: string | null;
   summary: string | null;
@@ -130,11 +131,17 @@ export interface ListRunsResult { runs: Run[] }
 export interface GetRunResult { run: Run; steps: RunStep[]; logs: RunLog[] }
 
 /** Create a new test run for a project. */
-export function runsCreate(project_id: string, scope_mode: ScopeMode, instructions?: string) {
+export function runsCreate(
+  project_id: string,
+  scope_mode: ScopeMode,
+  instructions?: string,
+  feature_description?: string
+) {
   return callEdgeFunction<CreateRunResult>(supabase, "runs_create", {
     project_id,
     scope_mode,
     ...(instructions ? { instructions } : {}),
+    ...(feature_description?.trim() ? { feature_description: feature_description.trim() } : {}),
   });
 }
 

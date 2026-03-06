@@ -37,10 +37,11 @@ Deno.serve(async (req) => {
     if (authError || !user) return json({ data: null, error: "Unauthorized" }, 401);
 
     const body = await req.json();
-    const { project_id, scope_mode = "everything", instructions } = body as {
+    const { project_id, scope_mode = "everything", instructions, feature_description } = body as {
       project_id: string;
       scope_mode?: "everything" | "instructions";
       instructions?: string;
+      feature_description?: string;
     };
 
     if (!project_id?.trim()) {
@@ -65,7 +66,7 @@ Deno.serve(async (req) => {
       return json({ data: null, error: "Project not found" }, 404);
     }
 
-    // Create the run
+    // Create the run, storing feature_description in its dedicated column
     const { data: run, error: runError } = await supabase
       .from("ai_qa_tester_qa_runs")
       .insert({
@@ -74,8 +75,9 @@ Deno.serve(async (req) => {
         status: "queued",
         scope_mode,
         instructions: scope_mode === "instructions" ? instructions?.trim() : null,
+        feature_description: feature_description?.trim() || null,
       })
-      .select("id, project_id, user_id, status, scope_mode, instructions, started_at, completed_at, summary, error, created_at")
+      .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
       .single();
 
     if (runError) return json({ data: null, error: runError.message }, 500);

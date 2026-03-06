@@ -11,7 +11,7 @@ interface UseRunsReturn {
   latestRun: Run | null;
   loading: boolean;
   error: string | null;
-  createRun: (scopeMode: ScopeMode, instructions?: string) => Promise<{ run: Run | null; error: string | null }>;
+  createRun: (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => Promise<{ run: Run | null; error: string | null }>;
   refresh: () => void;
 }
 
@@ -64,9 +64,9 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [projectId, isActive, refresh]);
 
-  const createRun = useCallback(async (scopeMode: ScopeMode, instructions?: string) => {
+  const createRun = useCallback(async (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => {
     if (!projectId) return { run: null, error: "No project selected" };
-    const { data, error: err } = await runsCreate(projectId, scopeMode, instructions);
+    const { data, error: err } = await runsCreate(projectId, scopeMode, instructions, featureDescription);
     if (err || !data) {
       const msg = err ?? "Failed to create run";
       reportSelfHealError(supabase, {
