@@ -48,14 +48,21 @@ export function settingsValidateKeys() {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
+export type RunStatus = "queued" | "running" | "passed" | "failed" | "canceled";
+export type ScopeMode = "everything" | "instructions";
+
 export interface Project {
   id: string;
   user_id: string;
   name: string;
   url: string;
-  status: "idle" | "queued" | "running" | "passed" | "failed" | "canceled";
+  status: "idle" | RunStatus;
   created_at: string;
   updated_at: string;
+  // Enriched by projects_list join
+  latest_run_id: string | null;
+  latest_run_status: RunStatus | null;
+  last_run_at: string | null;
 }
 
 export interface CreateProjectResult {
@@ -76,7 +83,67 @@ export function projectsCreate(targetUrl: string, name?: string) {
   });
 }
 
-/** List all projects for the current user, newest first. */
+/** List all projects for the current user, newest first (enriched with latest run). */
 export function projectsList() {
   return callEdgeFunction<ListProjectsResult>(supabase, "projects_list", {});
+}
+
+// ─── Runs ──────────────────────────────────────────────────────────────────────
+
+export interface Run {
+  id: string;
+  project_id: string;
+  user_id: string;
+  status: RunStatus;
+  scope_mode: ScopeMode;
+  instructions: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  summary: string | null;
+  error: string | null;
+  created_at: string;
+}
+
+export interface RunStep {
+  id: string;
+  run_id: string;
+  idx: number;
+  title: string;
+  expected: string | null;
+  status: "pending" | "running" | "passed" | "failed" | "skipped";
+  notes: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface RunLog {
+  id: string;
+  run_id: string;
+  ts: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  step_id: string | null;
+}
+
+export interface CreateRunResult { run: Run }
+export interface ListRunsResult { runs: Run[] }
+export interface GetRunResult { run: Run; steps: RunStep[]; logs: RunLog[] }
+
+/** Create a new test run for a project. */
+export function runsCreate(project_id: string, scope_mode: ScopeMode, instructions?: string) {
+  return callEdgeFunction<CreateRunResult>(supabase, "runs_create", {
+    project_id,
+    scope_mode,
+    ...(instructions ? { instructions } : {}),
+  });
+}
+
+/** List all runs for a project, newest first. */
+export function runsListByProject(project_id: string) {
+  return callEdgeFunction<ListRunsResult>(supabase, "runs_list_by_project", { project_id });
+}
+
+/** Get a single run with its steps and logs. */
+export function runsGet(run_id: string) {
+  return callEdgeFunction<GetRunResult>(supabase, "runs_get", { run_id });
 }

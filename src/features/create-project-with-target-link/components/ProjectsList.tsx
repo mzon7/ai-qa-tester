@@ -10,13 +10,13 @@ interface ProjectsListProps {
   onCreateClick: () => void;
 }
 
-const STATUS_META: Record<string, { label: string; cls: string }> = {
-  idle:     { label: "Idle",     cls: "badge-idle" },
-  queued:   { label: "Queued",   cls: "badge-queued" },
-  running:  { label: "Running",  cls: "badge-running" },
-  passed:   { label: "Passed",   cls: "badge-passed" },
-  failed:   { label: "Failed",   cls: "badge-failed" },
-  canceled: { label: "Canceled", cls: "badge-idle" },
+const STATUS_META: Record<string, { label: string; cls: string; dot: string }> = {
+  idle:     { label: "No runs",  cls: "badge-idle",    dot: "dot-idle"    },
+  queued:   { label: "Queued",   cls: "badge-queued",  dot: "dot-queued"  },
+  running:  { label: "Running",  cls: "badge-running", dot: "dot-running" },
+  passed:   { label: "Passed",   cls: "badge-passed",  dot: "dot-passed"  },
+  failed:   { label: "Failed",   cls: "badge-failed",  dot: "dot-failed"  },
+  canceled: { label: "Canceled", cls: "badge-idle",    dot: "dot-idle"    },
 };
 
 function hostname(url: string) {
@@ -127,8 +127,11 @@ export default function ProjectsList({
 
         {!loading &&
           filtered.map((project) => {
-            const meta = STATUS_META[project.status] ?? STATUS_META.idle;
+            // Prefer the latest run status over the project's own status field
+            const statusKey = project.latest_run_status ?? project.status;
+            const meta = STATUS_META[statusKey] ?? STATUS_META.idle;
             const isSelected = project.id === selectedId;
+            const lastActivity = project.last_run_at ?? project.updated_at;
             return (
               <button
                 key={project.id}
@@ -139,11 +142,14 @@ export default function ProjectsList({
               >
                 <div className="plist-item-main">
                   <span className="plist-item-name">{project.name}</span>
-                  <span className={`plist-badge ${meta.cls}`}>{meta.label}</span>
+                  <span className={`plist-badge ${meta.cls} plist-badge-dot`}>
+                    <span className={`pdetail-dot ${meta.dot}`} aria-hidden="true" />
+                    {meta.label}
+                  </span>
                 </div>
                 <div className="plist-item-sub">
                   <span className="plist-item-url">{hostname(project.url)}</span>
-                  <span className="plist-item-time">{timeAgo(project.updated_at)}</span>
+                  <span className="plist-item-time">{timeAgo(lastActivity)}</span>
                 </div>
               </button>
             );

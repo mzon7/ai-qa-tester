@@ -19,6 +19,10 @@ vi.mock("../../lib/api", () => ({
   settingsGet: vi.fn(),
   settingsSaveKeys: vi.fn(),
   settingsValidateKeys: vi.fn(),
+  // Needed because ProjectDetails now loads runs when a project is selected
+  runsListByProject: vi.fn(() => Promise.resolve({ data: { runs: [] }, error: null })),
+  runsCreate: vi.fn(),
+  runsGet: vi.fn(),
 }));
 
 vi.mock("@mzon7/zon-incubator-sdk/auth", () => ({
@@ -64,6 +68,9 @@ const SAMPLE_PROJECT = {
   status: "idle" as const,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  latest_run_id: null,
+  latest_run_status: null,
+  last_run_at: null,
 };
 
 /**
