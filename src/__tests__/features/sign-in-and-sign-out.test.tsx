@@ -49,6 +49,8 @@ function createMockAuth(overrides: Partial<AuthContextValue> = {}): AuthContextV
     user: null,
     session: null,
     loading: false,
+    registered: false,
+    registrationError: null,
     signIn: vi.fn().mockResolvedValue({ error: null }),
     signUp: vi.fn().mockResolvedValue({ error: null, needsConfirmation: false }),
     signOut: vi.fn().mockResolvedValue(undefined),
