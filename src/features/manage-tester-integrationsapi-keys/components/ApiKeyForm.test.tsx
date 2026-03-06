@@ -17,7 +17,11 @@ vi.mock("../../../lib/api", () => ({
 }));
 
 vi.mock("../../../lib/supabase", () => ({
-  supabase: {},
+  supabase: {
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  },
   dbTable: (name: string) => `ai_qa_tester_${name}`,
 }));
 

@@ -13,6 +13,15 @@ import type { ReactNode } from "react";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
+vi.mock("../../lib/supabase", () => ({
+  supabase: {
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  },
+  dbTable: (name: string) => `ai_qa_tester_${name}`,
+}));
+
 vi.mock("../../lib/api", () => ({
   projectsList: vi.fn(),
   projectsCreate: vi.fn(),

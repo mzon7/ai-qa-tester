@@ -55,7 +55,7 @@ function createMockAuth(overrides: Partial<AuthContextValue> = {}): AuthContextV
     signUp: vi.fn().mockResolvedValue({ error: null, needsConfirmation: false }),
     signOut: vi.fn().mockResolvedValue(undefined),
     ...overrides,
-  };
+  } as AuthContextValue;
 }
 
 /**

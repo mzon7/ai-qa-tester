@@ -12,6 +12,15 @@ import type { ReactNode } from "react";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
+vi.mock("../../lib/supabase", () => ({
+  supabase: {
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  },
+  dbTable: (name: string) => `ai_qa_tester_${name}`,
+}));
+
 // Mock the api module — ApiKeyForm imports settingsGet/settingsSaveKeys/settingsValidateKeys from here
 vi.mock("../../lib/api", () => ({
   settingsGet: vi.fn(),
