@@ -230,7 +230,8 @@ Deno.serve(async (req) => {
     if (runErr || !run) return json({ data: null, error: "Run not found" }, 404);
 
     if (!run.feature_description?.trim()) {
-      return json({ data: null, error: "Run has no feature_description — nothing to plan" }, 422);
+      // Return 200 so the SDK surfaces the error body; non-2xx is swallowed as a generic message.
+      return json({ data: null, error: "Run has no feature_description — nothing to plan" }, 200);
     }
 
     const { data: project, error: projErr } = await supabase
@@ -376,7 +377,7 @@ async function doPlan(
       .update({ status: "failed", error: (err as Error).message })
       .eq("id", run.id);
 
-    return json({ data: null, error: (err as Error).message }, 502);
+    return json({ data: null, error: (err as Error).message }, 200);
   }
 
   // ── Insert steps as "pending" ───────────────────────────────────────────────
