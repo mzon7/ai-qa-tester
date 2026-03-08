@@ -8,7 +8,8 @@ interface RunStatusPanelProps {
   rerunLoading: boolean;
 }
 
-const MAX_VISIBLE_LOGS = 100;
+/** Show last 50 log lines live (per spec). */
+const MAX_VISIBLE_LOGS = 50;
 
 const LEVEL_CLS: Record<string, string> = {
   info: "rlog-info",
@@ -71,7 +72,7 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
   const isActive = run.status === "queued" || run.status === "running";
 
   // Subscribe to live SSE only while the run is active
-  const { sseStatus, sseLogs, sseConnected } = useRunSSE(isActive ? run.id : null);
+  const { sseStatus, sseLogs, sseSteps, sseConnected } = useRunSSE(isActive ? run.id : null);
 
   // Merge SSE status with the prop: SSE is more current when connected
   const liveStatus = (sseConnected && sseStatus?.status) ? sseStatus.status : run.status;
@@ -85,7 +86,17 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
   // Don't show the plain summary when it's a needs_input message (shown separately below)
   const plainSummary = !needsInput && run.summary ? run.summary : null;
 
-  // Virtualized log list: only render last MAX_VISIBLE_LOGS entries
+  // ── Step progress ─────────────────────────────────────────────────────────
+  const passedSteps  = sseSteps.filter((s) => s.status === "passed").length;
+  const failedSteps  = sseSteps.filter((s) => s.status === "failed").length;
+  const runningStep  = sseSteps.find((s) => s.status === "running") ?? null;
+  const pendingSteps = sseSteps.filter((s) => s.status === "pending" || s.status === "running").length;
+  const totalSteps   = sseSteps.length;
+  const hasSteps     = totalSteps > 0;
+  const passedPct    = hasSteps ? (passedSteps / totalSteps) * 100 : 0;
+  const failedPct    = hasSteps ? (failedSteps / totalSteps) * 100 : 0;
+
+  // Log list: last 50
   const visibleLogs = sseLogs.length > MAX_VISIBLE_LOGS
     ? sseLogs.slice(-MAX_VISIBLE_LOGS)
     : sseLogs;
@@ -109,6 +120,14 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
             {dur && <> · {dur}</>}
             {run.scope_mode === "instructions" && <> · Custom</>}
           </span>
+          {/* Connection indicator — always visible while run is active */}
+          {isActive && (
+            <span className={`rsp-conn-badge ${sseConnected ? "rsp-conn-live" : "rsp-conn-polling"}`}
+                  aria-label={sseConnected ? "Live stream connected" : "Polling for updates"}>
+              <span className="rsp-conn-dot" aria-hidden="true" />
+              {sseConnected ? "Live" : "Polling"}
+            </span>
+          )}
         </div>
 
         {isDone && (

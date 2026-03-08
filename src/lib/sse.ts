@@ -1,17 +1,19 @@
 /**
- * useRunSSE — subscribes to the runs_stream edge function via EventSource.
+ * useRunSSE — subscribes to the runs_stream edge function for live run updates.
  *
- * EventSource cannot set custom headers, so the JWT is passed as ?token=.
- * The hook handles deduplication, log capping, and auto-cleanup on unmount.
+ * Uses fetch() with a streaming body instead of EventSource so we can send
+ * the Authorization header (EventSource cannot set custom headers).
+ * The response is a text/event-stream; we parse SSE events manually.
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
+import { runsGet } from "./api";
 import type { RunStatus, RunLog, RunStep } from "./api";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const TERMINAL = new Set<string>(["passed", "failed", "canceled"]);
 
-/** How many log lines to keep in state (oldest are discarded). */
+/** Maximum log lines kept in state (oldest discarded when exceeded). */
 const MAX_LOGS = 200;
 
 export interface SSERunStatus {
@@ -23,14 +25,35 @@ export interface SSERunStatus {
 }
 
 interface UseRunSSEReturn {
-  /** Latest run status from the stream (null before first event). */
+  /** Latest run status received via SSE. */
   sseStatus: SSERunStatus | null;
-  /** Accumulated log lines (capped at MAX_LOGS). */
+  /** Accumulated log lines, capped at MAX_LOGS. */
   sseLogs: RunLog[];
   /** Latest steps snapshot from the stream. */
   sseSteps: RunStep[];
-  /** True while the EventSource connection is open. */
+  /** True while the stream connection is active. */
   sseConnected: boolean;
+}
+
+/** Parse raw SSE text into { event, data } pairs. */
+function parseSSEChunk(text: string): Array<{ event: string; data: string }> {
+  const events: Array<{ event: string; data: string }> = [];
+  // SSE events are separated by double newlines
+  const blocks = text.split(/\n\n+/);
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+    let event = "message";
+    let data = "";
+    for (const line of block.split("\n")) {
+      if (line.startsWith("event:")) {
+        event = line.slice(6).trim();
+      } else if (line.startsWith("data:")) {
+        data = line.slice(5).trim();
+      }
+    }
+    if (data) events.push({ event, data });
+  }
+  return events;
 }
 
 export function useRunSSE(runId: string | null): UseRunSSEReturn {
@@ -39,13 +62,12 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
   const [sseSteps, setSseSteps] = useState<RunStep[]>([]);
   const [sseConnected, setSseConnected] = useState(false);
 
-  const esRef = useRef<EventSource | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const seenLogIds = useRef<Set<string>>(new Set());
-  const isTerminal = useRef(false);
 
-  const closeES = useCallback(() => {
-    esRef.current?.close();
-    esRef.current = null;
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
     setSseConnected(false);
   }, []);
 
@@ -55,83 +77,146 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
       setSseLogs([]);
       setSseSteps([]);
       seenLogIds.current.clear();
-      isTerminal.current = false;
-      closeES();
+      stop();
       return;
     }
 
     let cancelled = false;
     seenLogIds.current.clear();
-    isTerminal.current = false;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (cancelled || !session?.access_token) return;
 
-      const url =
-        `${SUPABASE_URL}/functions/v1/runs_stream` +
-        `?runId=${encodeURIComponent(runId)}` +
-        `&token=${encodeURIComponent(session.access_token)}`;
+      const url = `${SUPABASE_URL}/functions/v1/runs_stream?runId=${encodeURIComponent(runId)}`;
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
 
-      const es = new EventSource(url);
-      esRef.current = es;
+      try {
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            Accept: "text/event-stream",
+          },
+          signal: ctrl.signal,
+        });
 
-      es.onopen = () => {
-        if (!cancelled) setSseConnected(true);
-      };
-
-      // Connection errors — EventSource auto-reconnects; we just mark disconnected.
-      es.onerror = (e) => {
-        if (e instanceof MessageEvent) return; // server-sent "error" event, handled below
-        setSseConnected(false);
-      };
-
-      es.addEventListener("status", (e: Event) => {
-        if (cancelled) return;
-        const data = JSON.parse((e as MessageEvent).data) as SSERunStatus;
-        setSseStatus(data);
-        if (TERMINAL.has(data.status)) {
-          isTerminal.current = true;
-          closeES();
+        if (!res.ok || !res.body) {
+          stop();
+          return;
         }
-      });
 
-      es.addEventListener("log", (e: Event) => {
-        if (cancelled) return;
-        const { log } = JSON.parse((e as MessageEvent).data) as { log: RunLog };
-        if (!log?.id || seenLogIds.current.has(log.id)) return;
+        if (!cancelled) setSseConnected(true);
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let partial = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done || cancelled) break;
+
+          partial += decoder.decode(value, { stream: true });
+
+          // Extract complete SSE blocks (terminated by \n\n)
+          const lastDoubleNewline = partial.lastIndexOf("\n\n");
+          if (lastDoubleNewline === -1) continue;
+
+          const complete = partial.slice(0, lastDoubleNewline + 2);
+          partial = partial.slice(lastDoubleNewline + 2);
+
+          for (const { event, data } of parseSSEChunk(complete)) {
+            if (cancelled) break;
+            try {
+              if (event === "status") {
+                const d = JSON.parse(data) as SSERunStatus;
+                setSseStatus(d);
+                if (TERMINAL.has(d.status)) {
+                  stop();
+                  return;
+                }
+              } else if (event === "log") {
+                const { log } = JSON.parse(data) as { log: RunLog };
+                if (!log?.id || seenLogIds.current.has(log.id)) continue;
+                seenLogIds.current.add(log.id);
+                setSseLogs((prev) => {
+                  const next = [...prev, log];
+                  return next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next;
+                });
+              } else if (event === "steps") {
+                const { steps } = JSON.parse(data) as { steps: RunStep[] };
+                setSseSteps(steps ?? []);
+              } else if (event === "done") {
+                stop();
+                return;
+              }
+            } catch {
+              // Malformed event — skip
+            }
+          }
+        }
+      } catch (err) {
+        if ((err as Error)?.name !== "AbortError") {
+          setSseConnected(false);
+        }
+      }
+
+      if (!cancelled) setSseConnected(false);
+    });
+
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [runId, stop]);
+
+  // ── Polling fallback ──────────────────────────────────────────────────────
+  // When SSE is unavailable, poll runsGet every 2s so live updates still work.
+  // Stops automatically when SSE connects (sseConnected becomes true).
+  useEffect(() => {
+    if (!runId || sseConnected) return;
+
+    let cancelled = false;
+
+    const appendNewLogs = (logs: RunLog[]) => {
+      for (const log of logs) {
+        if (!log?.id || seenLogIds.current.has(log.id)) continue;
         seenLogIds.current.add(log.id);
         setSseLogs((prev) => {
           const next = [...prev, log];
           return next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next;
         });
+      }
+    };
+
+    const poll = async () => {
+      if (cancelled) return;
+      const { data } = await runsGet(runId);
+      if (cancelled || !data) return;
+
+      setSseStatus({
+        status: data.run.status,
+        summary: data.run.summary,
+        error: data.run.error,
+        started_at: data.run.started_at,
+        completed_at: data.run.completed_at,
       });
 
-      es.addEventListener("steps", (e: Event) => {
-        if (cancelled) return;
-        const { steps } = JSON.parse((e as MessageEvent).data) as { steps: RunStep[] };
-        setSseSteps(steps ?? []);
-      });
+      appendNewLogs(data.logs ?? []);
 
-      es.addEventListener("done", () => {
-        isTerminal.current = true;
-        closeES();
-      });
+      if (data.steps?.length) {
+        setSseSteps(data.steps);
+      }
+    };
 
-      // Server-sent error event (name "error" from the edge fn)
-      es.addEventListener("error", (e: Event) => {
-        if (e instanceof MessageEvent) {
-          console.warn("[SSE] stream error:", (e as MessageEvent).data);
-          closeES();
-        }
-        // plain ErrorEvent (connection error) is already handled by onerror
-      });
-    });
+    // Immediate first poll, then every 2s
+    poll();
+    const id = setInterval(poll, 2000);
 
     return () => {
       cancelled = true;
-      closeES();
+      clearInterval(id);
     };
-  }, [runId, closeES]);
+  }, [runId, sseConnected]);
 
   return { sseStatus, sseLogs, sseSteps, sseConnected };
 }
