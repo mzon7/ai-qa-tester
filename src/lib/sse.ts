@@ -60,7 +60,11 @@ function parseSSEChunk(text: string): Array<{ event: string; data: string }> {
   return events;
 }
 
-export function useRunSSE(runId: string | null): UseRunSSEReturn {
+export function useRunSSE(
+  runId: string | null,
+  /** Called once when the run first reaches a terminal state (passed/failed/canceled). */
+  onTerminal?: () => void,
+): UseRunSSEReturn {
   const [sseStatus, setSseStatus] = useState<SSERunStatus | null>(null);
   const [sseLogs, setSseLogs] = useState<RunLog[]>([]);
   const [sseSteps, setSseSteps] = useState<RunStep[]>([]);
@@ -69,6 +73,11 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
   const abortRef = useRef<AbortController | null>(null);
   // seenLogIds persists across reconnects — cleared only when runId changes
   const seenLogIds = useRef<Set<string>>(new Set());
+  // Hold latest onTerminal in a ref so the effect doesn't need it as a dep
+  const onTerminalRef = useRef(onTerminal);
+  useEffect(() => { onTerminalRef.current = onTerminal; }, [onTerminal]);
+  // Ensure onTerminal fires at most once per runId
+  const terminalFiredRef = useRef(false);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -97,10 +106,20 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
     }
 
     let cancelled = false;
-    // Reset dedup set when switching to a new run
+    // Reset dedup + terminal-fired flag when switching to a new run
     seenLogIds.current.clear();
+    terminalFiredRef.current = false;
     // Backoff state — local to this effect invocation, persists across reconnects
     let backoffMs = BACKOFF_INITIAL_MS;
+
+    /** Fire onTerminal exactly once per run, then stop the stream. */
+    const fireTerminal = () => {
+      stop();
+      if (!terminalFiredRef.current) {
+        terminalFiredRef.current = true;
+        onTerminalRef.current?.();
+      }
+    };
 
     const url = `${SUPABASE_URL}/functions/v1/runs_stream?runId=${encodeURIComponent(runId)}`;
 
@@ -170,7 +189,7 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
                 setSseStatus(d);
                 if (TERMINAL.has(d.status)) {
                   terminal = true;
-                  stop();
+                  fireTerminal();
                   return;
                 }
               } else if (event === "log") {
@@ -181,7 +200,7 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
                 setSseSteps(steps ?? []);
               } else if (event === "done") {
                 terminal = true;
-                stop();
+                fireTerminal();
                 return;
               }
             } catch {
@@ -234,18 +253,23 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
       const { data } = await runsGet(runId);
       if (cancelled || !data) return;
 
-      setSseStatus({
+      const status: SSERunStatus = {
         status: data.run.status,
         summary: data.run.summary,
         error: data.run.error,
         started_at: data.run.started_at,
         completed_at: data.run.completed_at,
-      });
-
+      };
+      setSseStatus(status);
       appendNewLogs(data.logs ?? []);
+      if (data.steps?.length) setSseSteps(data.steps);
 
-      if (data.steps?.length) {
-        setSseSteps(data.steps);
+      // On terminal: fire callback once then stop polling
+      if (TERMINAL.has(data.run.status) && !terminalFiredRef.current) {
+        terminalFiredRef.current = true;
+        cancelled = true;
+        clearInterval(id);
+        onTerminalRef.current?.();
       }
     };
 

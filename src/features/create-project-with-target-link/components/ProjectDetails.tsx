@@ -262,6 +262,7 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
           run={focusedRun}
           onRerun={handleRerun}
           rerunLoading={rerunLoading}
+          onTerminal={refresh}
         />
       )}
 

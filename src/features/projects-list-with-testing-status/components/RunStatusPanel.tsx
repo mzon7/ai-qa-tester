@@ -6,6 +6,8 @@ interface RunStatusPanelProps {
   run: Run;
   onRerun: () => void;
   rerunLoading: boolean;
+  /** Called once when the run reaches a terminal state — use to refresh parent data. */
+  onTerminal?: () => void;
 }
 
 /** Show last 50 log lines live (per spec). */
@@ -68,11 +70,11 @@ function needsInputMessage(run: Run): string {
   return raw.replace(/^needs_input:\s*/i, "");
 }
 
-export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatusPanelProps) {
+export default function RunStatusPanel({ run, onRerun, rerunLoading, onTerminal }: RunStatusPanelProps) {
   const isActive = run.status === "queued" || run.status === "running";
 
-  // Subscribe to live SSE only while the run is active
-  const { sseStatus, sseLogs, sseSteps, sseConnected } = useRunSSE(isActive ? run.id : null);
+  // Subscribe to live SSE only while the run is active; fires onTerminal on completion
+  const { sseStatus, sseLogs, sseSteps, sseConnected } = useRunSSE(isActive ? run.id : null, onTerminal);
 
   // Merge SSE status with the prop: SSE is more current when connected
   const liveStatus = (sseConnected && sseStatus?.status) ? sseStatus.status : run.status;

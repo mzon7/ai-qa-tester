@@ -17,7 +17,15 @@ vi.mock("@mzon7/zon-incubator-sdk", () => ({
 }));
 
 vi.mock("../../lib/supabase", () => ({
-  supabase: {},
+  supabase: {
+    auth: {
+      // Return null session so useRunSSE exits cleanly without making network calls
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    },
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+    }),
+  },
   dbTable: (name: string) => `ai_qa_tester_${name}`,
 }));
 
