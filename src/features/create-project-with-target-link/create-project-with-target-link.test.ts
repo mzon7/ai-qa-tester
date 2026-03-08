@@ -176,6 +176,72 @@ describe("projectsList", () => {
   });
 });
 
+// ─── ProjectsList null-safety (unit logic) ────────────────────────────────────
+
+describe("ProjectsList — null-name guard", () => {
+  const baseProject = {
+    id: "p1",
+    user_id: "u1",
+    url: "https://example.com",
+    status: "idle" as const,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    latest_run_id: null,
+    latest_run_status: null,
+    last_run_at: null,
+  };
+
+  it("search filter does not throw when project name is null", () => {
+    const projects = [{ ...baseProject, name: null as unknown as string }];
+    const search = "example";
+    // Replicate the filter logic from ProjectsList
+    const filtered = projects.filter(
+      (p) =>
+        (p?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (p?.url ?? "").toLowerCase().includes(search.toLowerCase()),
+    );
+    expect(filtered).toHaveLength(1); // matched by URL
+  });
+
+  it("search filter excludes projects that do not match null name or URL", () => {
+    const projects = [{ ...baseProject, name: null as unknown as string }];
+    const search = "nomatch";
+    const filtered = projects.filter(
+      (p) =>
+        (p?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (p?.url ?? "").toLowerCase().includes(search.toLowerCase()),
+    );
+    expect(filtered).toHaveLength(0);
+  });
+
+  it("filter(Boolean) strips undefined/null entries from the projects array", () => {
+    const projects = [
+      baseProject,
+      undefined as unknown as typeof baseProject,
+      null as unknown as typeof baseProject,
+    ];
+    const safe = projects.filter(Boolean);
+    expect(safe).toHaveLength(1);
+    expect(safe[0].id).toBe("p1");
+  });
+
+  it("statusKey falls back to project.status when latest_run_status is null", () => {
+    const STATUS_META: Record<string, { label: string }> = {
+      idle: { label: "No runs" },
+      passed: { label: "Passed" },
+    };
+    const project = { ...baseProject, name: "Test", latest_run_status: null };
+    const statusKey = project.latest_run_status ?? project.status;
+    expect(STATUS_META[statusKey]?.label).toBe("No runs");
+  });
+
+  it("lastActivity falls back to created_at when both last_run_at and updated_at are absent", () => {
+    const project = { ...baseProject, name: "Test", last_run_at: null, updated_at: undefined as unknown as string };
+    const lastActivity = project.last_run_at ?? project.updated_at ?? project.created_at;
+    expect(lastActivity).toBe(project.created_at);
+  });
+});
+
 // ─── useProjects hook ─────────────────────────────────────────────────────────
 
 import { renderHook, waitFor } from "@testing-library/react";

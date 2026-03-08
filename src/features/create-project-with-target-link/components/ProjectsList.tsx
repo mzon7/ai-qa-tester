@@ -45,10 +45,10 @@ export default function ProjectsList({
 
   const filtered = search.trim()
     ? projects.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.url.toLowerCase().includes(search.toLowerCase())
+        (p?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+        (p?.url ?? "").toLowerCase().includes(search.toLowerCase())
       )
-    : projects;
+    : projects.filter(Boolean) as Project[];
 
   return (
     <div className="plist-panel">
@@ -127,11 +127,12 @@ export default function ProjectsList({
 
         {!loading &&
           filtered.map((project) => {
+            if (!project) return null;
             // Prefer the latest run status over the project's own status field
             const statusKey = project.latest_run_status ?? project.status;
             const meta = STATUS_META[statusKey] ?? STATUS_META.idle;
             const isSelected = project.id === selectedId;
-            const lastActivity = project.last_run_at ?? project.updated_at;
+            const lastActivity = project.last_run_at ?? project.updated_at ?? project.created_at;
             return (
               <button
                 key={project.id}
@@ -141,7 +142,7 @@ export default function ProjectsList({
                 onClick={() => onSelect(project)}
               >
                 <div className="plist-item-main">
-                  <span className="plist-item-name">{project.name}</span>
+                  <span className="plist-item-name">{project.name ?? project.url}</span>
                   <span className={`plist-badge ${meta.cls} plist-badge-dot`}>
                     <span className={`pdetail-dot ${meta.dot}`} aria-hidden="true" />
                     {meta.label}
