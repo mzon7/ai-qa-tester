@@ -15,17 +15,12 @@ export default function TestTargetPage() {
   }
 
   function handleBroken() {
-    // Simulate a broken button that throws an error
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const obj: any = null;
-      obj.nonExistentMethod(); // This will throw
-    } catch (err) {
-      setBrokenMsg(`✗ Error: ${err instanceof Error ? err.message : String(err)}`);
-      // Do not re-throw — the error message in the DOM is sufficient for Playwright
-      // to detect the broken state. Re-throwing would trigger window.onerror and
-      // create false-positive self-heal error reports.
-    }
+    // Simulate a broken button by directly setting the error message.
+    // We do NOT throw a real JS exception — in React 18/19 dev mode, thrown
+    // errors in event handlers can escape try/catch via React's scheduler and
+    // trigger window.onerror, causing false-positive self-heal reports.
+    // The error message in the DOM is sufficient for Playwright to detect the broken state.
+    setBrokenMsg("✗ Error: Cannot read properties of null (reading 'nonExistentMethod')");
   }
 
   return (
