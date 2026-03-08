@@ -21,3 +21,6 @@
 
 ## Learned: ProjectDetails (2026-03-08)
 - The code diff shows a change in the ProjectDetails component that updates the run's status to 'failed' when an infrastructure-level error occurs, addressing the issue of runs getting stuck in 'queued'
+
+## Learned: TestTargetPage.tsx (2026-03-08)
+- The code diff shows that the error handling in the `handleBroken` function was changed to directly set the error message instead of throwing an exception, which addresses the original TypeError.

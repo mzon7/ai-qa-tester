@@ -6,7 +6,12 @@
 - Also set `verify_jwt: false` on feature_plan via Management API so platform-level JWT check doesn't intercept before function code.
 - Status: resolved
 
-## [2026-03-08 19:24] Unresolved: ProjectDetails
+## [2026-03-08] Resolved: TestTargetPage — broken button triggering window.onerror
+- Root cause: React 18/19 dev mode re-dispatches errors thrown inside event handlers through its scheduler, which can escape try/catch and trigger window.onerror → false-positive self-heal reports.
+- Fix: Removed the real JS throw from handleBroken. Now directly sets brokenMsg state with the simulated error text. Playwright can still detect the broken state via DOM; no real exception is thrown.
+- Status: resolved
+
+## [2026-03-08 19:29] Unresolved: TestTargetPage.tsx
 - Error: Error messages (most recent):
-- Attempted: 1 fix(es), verdict: The code diff shows a change in the ProjectDetails component that updates the run's status to 'failed' when an infrastructure-level error occurs, addressing the issue of runs getting stuck in 'queued' state.
+- Attempted: 1 fix(es), verdict: The code diff shows that the error handling in the `handleBroken` function was changed to directly set the error message instead of throwing an exception, which addresses the original TypeError.
 - Status: unresolved
