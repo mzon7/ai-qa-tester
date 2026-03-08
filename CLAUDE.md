@@ -7,10 +7,13 @@
 - Finish the current task fully (including validation) before considering anything else.
 
 ## Response Style
+- Do not restate full files.
 - Do not output entire files unless creating a new file.
 - When editing code, show only the minimal changed lines.
 - Prefer referencing file paths and line numbers over restating code.
 - Keep explanations concise — focus on what changed and why.
+- Avoid git-style diffs unless explicitly requested.
+- If a file was already edited by a tool, only summarize the change.
 
 ## Database Rules
 - Shared Supabase — ALL table names prefixed with "ai_qa_tester_"
