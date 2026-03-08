@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { Project, Run, RunStep, ScopeMode } from "../../../lib/api";
 import { buttonScan, runsFeaturePlan, featureExecutor, runsFeatureReport } from "../../../lib/api";
-import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
+import { reportSelfHealError, withDbErrorCapture } from "@mzon7/zon-incubator-sdk";
 import { supabase } from "../../../lib/supabase";
 import { useRuns, useRunDetail } from "../../projects-list-with-testing-status/lib/useRuns";
 import RunCreateForm from "../../projects-list-with-testing-status/components/RunCreateForm";
@@ -112,11 +112,15 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
         });
         // Infrastructure-level failure (non-2xx from Supabase gateway, timeout, etc.)
         // The edge function never ran, so the run stays "queued" forever — mark it failed.
-        supabase
-          .from("ai_qa_tester_qa_runs")
-          .update({ status: "failed", error: `Feature planning failed: ${planErr}` })
-          .eq("id", runId)
-          .then(() => refresh());
+        withDbErrorCapture(
+          supabase,
+          "ai_qa_tester_qa_runs",
+          supabase
+            .from("ai_qa_tester_qa_runs")
+            .update({ status: "failed", error: `Feature planning failed: ${planErr}` })
+            .eq("id", runId),
+          "ai_qa_tester_",
+        ).then(() => refresh());
         return;
       }
       refresh();

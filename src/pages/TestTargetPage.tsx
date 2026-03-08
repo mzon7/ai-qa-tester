@@ -15,12 +15,12 @@ export default function TestTargetPage() {
   }
 
   function handleBroken() {
-    // Simulate a broken button by directly setting the error message.
-    // We do NOT throw a real JS exception — in React 18/19 dev mode, thrown
-    // errors in event handlers can escape try/catch via React's scheduler and
-    // trigger window.onerror, causing false-positive self-heal reports.
-    // The error message in the DOM is sufficient for Playwright to detect the broken state.
-    setBrokenMsg("✗ Error: Cannot read properties of null (reading 'nonExistentMethod')");
+    // Simulate a broken button: emit a console.error (detected by Playwright's
+    // page.on('console') listener) without throwing, which would escape React's
+    // event handler boundary and trigger window.onerror / self-heal false positives.
+    const msg = "TypeError: Cannot read properties of null (reading 'nonExistentMethod')";
+    console.error(msg);
+    setBrokenMsg(`✗ Error: ${msg}`);
   }
 
   return (
