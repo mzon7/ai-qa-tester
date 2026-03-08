@@ -94,13 +94,23 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
       return;
     }
     if (planErr) {
-      reportSelfHealError(supabase, {
-        category: "frontend",
-        source: "ProjectDetails",
-        errorMessage: planErr,
-        projectPrefix: "ai_qa_tester_",
-        metadata: { action: "runsFeaturePlan", runId },
-      });
+      // Don't report expected business-logic outcomes as system errors
+      const isExpectedError =
+        planErr.startsWith("needs_input:") ||
+        planErr.includes("no feature_description") ||
+        planErr.includes("Run is already") ||
+        planErr.includes("Run not found") ||
+        planErr.includes("Unauthorized") ||
+        planErr.includes("Missing Authorization");
+      if (!isExpectedError) {
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "ProjectDetails",
+          errorMessage: planErr,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "runsFeaturePlan", runId },
+        });
+      }
       refresh();
       return;
     }
