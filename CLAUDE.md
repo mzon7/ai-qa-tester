@@ -1,5 +1,11 @@
 # Project Rules
 
+## Response Style
+- Do not output entire files unless creating a new file.
+- When editing code, show only the minimal changed lines.
+- Prefer referencing file paths and line numbers over restating code.
+- Keep explanations concise — focus on what changed and why.
+
 ## Database Rules
 - Shared Supabase — ALL table names prefixed with "ai_qa_tester_"
 - Use `dbTable(name)` and `supabase` from `src/lib/supabase.ts` (provided by @mzon7/zon-incubator-sdk) for all table references
