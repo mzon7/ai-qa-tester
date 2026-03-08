@@ -1,14 +1,14 @@
 {
-  "projects_create": "e0653fb8b55a1548dafb614d8aa147c4ac67c006",
-  "projects_list": "ebc28b0c179e412d7769aff3b8925113c191fa98",
-  "runs_create": "e67f7e5a5d22f2ef0d1d589ade1f84b5f14e2e25",
-  "runs_get": "735dfcecb29852e4a104007d0de281f32eabdcff",
-  "runs_list_by_project": "707d2621fa96b87502bf44df94e05541e96d7064",
-  "settings_get": "3053f15d1b3bd1f42206dfea72277689d6ed4f8b",
-  "settings_save_keys": "b2f8cf08d8a3ab4b93cc1b97c2fb4035de3562d8",
-  "settings_validate_keys": "578be98e1a7487bf53e8f843f2dacaf3c55162b4",
-  "button_scan": "795cc8f76b01d9b06429668e1535f84260270f27",
-  "feature_executor": "e4dac94c3f7aca57e48982c9c92027f79b026395",
-  "feature_plan": "1021ec4a775bcd5a32e1d7c61230d0d836964081",
-  "feature_report": "e4dac94c3f7aca57e48982c9c92027f79b026395"
+  "projects_create": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "projects_list": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "runs_create": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "runs_get": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "runs_list_by_project": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "settings_get": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "settings_save_keys": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "settings_validate_keys": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "button_scan": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0",
+  "feature_executor": "5661f3b715a58cf5bf90d2e5285ef668ef461890",
+  "feature_plan": "5661f3b715a58cf5bf90d2e5285ef668ef461890",
+  "feature_report": "bab78d85b5cb0cbd133f499fe12e39e0b57d00f0"
 }
