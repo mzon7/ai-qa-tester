@@ -8,6 +8,7 @@ import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 import SettingsPage from "./pages/SettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
+import TestTargetPage from "./pages/TestTargetPage";
 
 function AppRoutes() {
   // Clears sensitive localStorage keys when user signs out
@@ -52,6 +53,9 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Public test target page — for Playwright button scanner demo */}
+      <Route path="/test" element={<TestTargetPage />} />
 
       {/* Default */}
       <Route path="*" element={<Navigate to="/home" replace />} />
