@@ -340,7 +340,9 @@ async function doPlan(
         message: `feature_plan: description too vague to plan — ${needsInputMessage}`,
       });
 
-    return json({ data: null, error: needsInputMessage }, 422);
+    // Return 200 so callEdgeFunction propagates the body to the client.
+    // A 422 would be swallowed as a generic error by the SDK wrapper.
+    return json({ data: { needs_input: true, message: needsInputMessage }, error: null }, 200);
   }
 
   // ── Delete any existing steps for this run (idempotent re-plan) ─────────────

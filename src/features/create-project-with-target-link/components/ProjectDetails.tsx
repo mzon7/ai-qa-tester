@@ -85,21 +85,22 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
   // ── Feature test: plan → execute ───────────────────────────────────────────
   const triggerFeatureTest = async (runId: string) => {
     // Step 1: planner generates structured test steps (synchronous AI call).
-    // A 422 "needs_input:" response means the description was too vague —
+    // data.needs_input === true means the description was too vague —
     // the run stays queued and the UI will surface the clarification message
     // via RunStatusPanel. This is not a system error, so don't self-heal-report it.
-    const { error: planErr } = await runsFeaturePlan(runId);
+    const { data: planData, error: planErr } = await runsFeaturePlan(runId);
+    if (planData?.needs_input) {
+      refresh();
+      return;
+    }
     if (planErr) {
-      const isUserInputIssue = planErr.startsWith("needs_input:");
-      if (!isUserInputIssue) {
-        reportSelfHealError(supabase, {
-          category: "frontend",
-          source: "ProjectDetails",
-          errorMessage: planErr,
-          projectPrefix: "ai_qa_tester_",
-          metadata: { action: "runsFeaturePlan", runId },
-        });
-      }
+      reportSelfHealError(supabase, {
+        category: "frontend",
+        source: "ProjectDetails",
+        errorMessage: planErr,
+        projectPrefix: "ai_qa_tester_",
+        metadata: { action: "runsFeaturePlan", runId },
+      });
       refresh();
       return;
     }

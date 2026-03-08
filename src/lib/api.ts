@@ -164,9 +164,12 @@ export interface FeaturePlanStep {
 }
 
 export interface FeaturePlanResult {
-  run_id: string;
-  steps_created: number;
-  steps: FeaturePlanStep[];
+  run_id?: string;
+  steps_created?: number;
+  steps?: FeaturePlanStep[];
+  /** Set when the feature description was too vague; the run stays queued. */
+  needs_input?: boolean;
+  message?: string;
 }
 
 /**
