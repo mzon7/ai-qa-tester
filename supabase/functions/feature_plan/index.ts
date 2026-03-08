@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (runErr || !run) return json({ data: null, error: "Run not found" }, 404);
+    if (runErr || !run) return json({ data: null, error: "Run not found" }, 200);
 
     if (!run.feature_description?.trim()) {
       // Return 200 so the SDK surfaces the error body; non-2xx is swallowed as a generic message.
@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
       .eq("id", run.project_id)
       .single();
 
-    if (projErr || !project) return json({ data: null, error: "Project not found" }, 404);
+    if (projErr || !project) return json({ data: null, error: "Project not found" }, 200);
 
     // ── Resolve Grok API key ──────────────────────────────────────────────────
     // First try the edge function env var (for server-level key), then fall
@@ -259,20 +259,20 @@ Deno.serve(async (req) => {
         return json({
           data: null,
           error: "No API key configured. Add a Grok key in Settings or set GROK_API_KEY.",
-        }, 503);
+        }, 200);
       }
 
       // Decrypt via the settings helper (re-use the decryption logic inline)
       const secret = Deno.env.get("API_KEY_SECRET");
       if (!secret) {
-        return json({ data: null, error: "Server configuration error: API_KEY_SECRET not set" }, 503);
+        return json({ data: null, error: "Server configuration error: API_KEY_SECRET not set" }, 200);
       }
 
       // Inline AES-256-GCM decryption (same approach as settings_validate_keys)
       const enc = settings.llm_api_key_encrypted as string;
       const [ivHex, encHex] = enc.split(":");
       if (!ivHex || !encHex) {
-        return json({ data: null, error: "Stored key is malformed" }, 500);
+        return json({ data: null, error: "Stored key is malformed" }, 200);
       }
 
       const keyMaterial = await crypto.subtle.importKey(
@@ -291,7 +291,7 @@ Deno.serve(async (req) => {
         const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, keyMaterial, encData);
         decrypted = new TextDecoder().decode(plain);
       } catch {
-        return json({ data: null, error: "Failed to decrypt stored API key" }, 500);
+        return json({ data: null, error: "Failed to decrypt stored API key" }, 200);
       }
 
       return await doPlan(supabase, run, project.url, decrypted);
@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
 
     return await doPlan(supabase, run, project.url, grokApiKey);
   } catch (err) {
-    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" }, 200);
   }
 });
 
@@ -395,7 +395,7 @@ async function doPlan(
     .insert(rows);
 
   if (insertErr) {
-    return json({ data: null, error: `Failed to store plan steps: ${insertErr.message}` }, 500);
+    return json({ data: null, error: `Failed to store plan steps: ${insertErr.message}` }, 200);
   }
 
   // ── Log plan creation ───────────────────────────────────────────────────────
