@@ -4,6 +4,11 @@
  * Uses fetch() with a streaming body instead of EventSource so we can send
  * the Authorization header (EventSource cannot set custom headers).
  * The response is a text/event-stream; we parse SSE events manually.
+ *
+ * Robustness features (Step 5):
+ *   - Auto-reconnect with exponential backoff (1s → 2s → 4s … 30s cap)
+ *   - Dedup log events by id across reconnects via seenLogIds ref
+ *   - No reconnect on: user abort, terminal run status, component unmount
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "./supabase";
@@ -15,6 +20,9 @@ const TERMINAL = new Set<string>(["passed", "failed", "canceled"]);
 
 /** Maximum log lines kept in state (oldest discarded when exceeded). */
 const MAX_LOGS = 200;
+
+const BACKOFF_INITIAL_MS = 1_000;
+const BACKOFF_MAX_MS = 30_000;
 
 export interface SSERunStatus {
   status: RunStatus;
@@ -38,18 +46,14 @@ interface UseRunSSEReturn {
 /** Parse raw SSE text into { event, data } pairs. */
 function parseSSEChunk(text: string): Array<{ event: string; data: string }> {
   const events: Array<{ event: string; data: string }> = [];
-  // SSE events are separated by double newlines
   const blocks = text.split(/\n\n+/);
   for (const block of blocks) {
     if (!block.trim()) continue;
     let event = "message";
     let data = "";
     for (const line of block.split("\n")) {
-      if (line.startsWith("event:")) {
-        event = line.slice(6).trim();
-      } else if (line.startsWith("data:")) {
-        data = line.slice(5).trim();
-      }
+      if (line.startsWith("event:")) event = line.slice(6).trim();
+      else if (line.startsWith("data:")) data = line.slice(5).trim();
     }
     if (data) events.push({ event, data });
   }
@@ -63,12 +67,23 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
   const [sseConnected, setSseConnected] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
+  // seenLogIds persists across reconnects — cleared only when runId changes
   const seenLogIds = useRef<Set<string>>(new Set());
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     setSseConnected(false);
+  }, []);
+
+  /** Append only log rows we haven't seen before (dedup by id). */
+  const appendLog = useCallback((log: RunLog) => {
+    if (!log?.id || seenLogIds.current.has(log.id)) return;
+    seenLogIds.current.add(log.id);
+    setSseLogs((prev) => {
+      const next = [...prev, log];
+      return next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next;
+    });
   }, []);
 
   useEffect(() => {
@@ -82,14 +97,33 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
     }
 
     let cancelled = false;
+    // Reset dedup set when switching to a new run
     seenLogIds.current.clear();
+    // Backoff state — local to this effect invocation, persists across reconnects
+    let backoffMs = BACKOFF_INITIAL_MS;
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    const url = `${SUPABASE_URL}/functions/v1/runs_stream?runId=${encodeURIComponent(runId)}`;
+
+    /** Schedule a reconnect after the current backoff delay, then double it. */
+    const scheduleReconnect = () => {
+      if (cancelled) return;
+      setSseConnected(false);
+      const delay = backoffMs;
+      backoffMs = Math.min(backoffMs * 2, BACKOFF_MAX_MS);
+      setTimeout(() => { if (!cancelled) connect(); }, delay);
+    };
+
+    const connect = async () => {
+      if (cancelled) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
       if (cancelled || !session?.access_token) return;
 
-      const url = `${SUPABASE_URL}/functions/v1/runs_stream?runId=${encodeURIComponent(runId)}`;
       const ctrl = new AbortController();
       abortRef.current = ctrl;
+
+      // Whether the stream ended due to a terminal run state (no reconnect needed)
+      let terminal = false;
 
       try {
         const res = await fetch(url, {
@@ -101,11 +135,16 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
         });
 
         if (!res.ok || !res.body) {
-          stop();
+          // Non-2xx or no body — back off and retry
+          scheduleReconnect();
           return;
         }
 
-        if (!cancelled) setSseConnected(true);
+        // Successful connection — reset backoff
+        if (!cancelled) {
+          setSseConnected(true);
+          backoffMs = BACKOFF_INITIAL_MS;
+        }
 
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
@@ -117,7 +156,6 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
 
           partial += decoder.decode(value, { stream: true });
 
-          // Extract complete SSE blocks (terminated by \n\n)
           const lastDoubleNewline = partial.lastIndexOf("\n\n");
           if (lastDoubleNewline === -1) continue;
 
@@ -131,21 +169,18 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
                 const d = JSON.parse(data) as SSERunStatus;
                 setSseStatus(d);
                 if (TERMINAL.has(d.status)) {
+                  terminal = true;
                   stop();
                   return;
                 }
               } else if (event === "log") {
                 const { log } = JSON.parse(data) as { log: RunLog };
-                if (!log?.id || seenLogIds.current.has(log.id)) continue;
-                seenLogIds.current.add(log.id);
-                setSseLogs((prev) => {
-                  const next = [...prev, log];
-                  return next.length > MAX_LOGS ? next.slice(-MAX_LOGS) : next;
-                });
+                appendLog(log);
               } else if (event === "steps") {
                 const { steps } = JSON.parse(data) as { steps: RunStep[] };
                 setSseSteps(steps ?? []);
               } else if (event === "done") {
+                terminal = true;
                 stop();
                 return;
               }
@@ -155,19 +190,25 @@ export function useRunSSE(runId: string | null): UseRunSSEReturn {
           }
         }
       } catch (err) {
-        if ((err as Error)?.name !== "AbortError") {
-          setSseConnected(false);
-        }
+        // AbortError means we intentionally stopped — don't reconnect
+        if ((err as Error)?.name === "AbortError") return;
+        setSseConnected(false);
       }
 
-      if (!cancelled) setSseConnected(false);
-    });
+      // Stream ended unexpectedly (edge fn timeout, network drop, etc.)
+      // Reconnect unless we hit a terminal state or were cancelled.
+      if (!cancelled && !terminal) {
+        scheduleReconnect();
+      }
+    };
+
+    connect();
 
     return () => {
       cancelled = true;
       stop();
     };
-  }, [runId, stop]);
+  }, [runId, stop, appendLog]);
 
   // ── Polling fallback ──────────────────────────────────────────────────────
   // When SSE is unavailable, poll runsGet every 2s so live updates still work.

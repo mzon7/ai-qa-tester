@@ -1545,6 +1545,97 @@ body {
 }
 .rsp-instructions-label { color: var(--text-muted); font-weight: 600; }
 
+/* ─── RunStatusPanel: connection indicator ──────────────── */
+.rsp-conn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+.rsp-conn-live {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+.rsp-conn-polling {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.2);
+}
+.rsp-conn-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.rsp-conn-live .rsp-conn-dot {
+  animation: rsp-live-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── RunStatusPanel: step progress ─────────────────────── */
+.rsp-progress {
+  margin-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rsp-step-current {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rsp-step-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.rsp-progress-track {
+  position: relative;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--surface);
+  overflow: hidden;
+  display: flex;
+}
+.rsp-progress-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+.rsp-progress-passed { background: var(--primary); }
+.rsp-progress-failed  { background: var(--error); }
+.rsp-progress-indeterminate {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0%, var(--primary-light) 50%, transparent 100%);
+  animation: rsp-indeterminate 1.6s ease-in-out infinite;
+}
+@keyframes rsp-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+.rsp-progress-stats {
+  display: flex;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+  margin: 0;
+}
+.rsp-stat-passed { color: #4ade80; }
+.rsp-stat-failed  { color: var(--error); }
+.rsp-stat-pending { color: var(--text-faint); }
+
 /* ─── RunStatusPanel: live log stream ───────────────────── */
 .rsp-live-logs {
   margin-top: 0.75rem;
