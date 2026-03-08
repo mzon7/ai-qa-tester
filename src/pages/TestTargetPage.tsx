@@ -22,7 +22,9 @@ export default function TestTargetPage() {
       obj.nonExistentMethod(); // This will throw
     } catch (err) {
       setBrokenMsg(`✗ Error: ${err instanceof Error ? err.message : String(err)}`);
-      throw err; // Re-throw so Playwright / window.onerror captures it
+      // Do not re-throw — the error message in the DOM is sufficient for Playwright
+      // to detect the broken state. Re-throwing would trigger window.onerror and
+      // create false-positive self-heal error reports.
     }
   }
 
