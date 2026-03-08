@@ -170,3 +170,53 @@ describe("projectsList", () => {
     expect(safeProjects).toEqual([]);
   });
 });
+
+// ─── useProjects hook ─────────────────────────────────────────────────────────
+
+import { renderHook, waitFor } from "@testing-library/react";
+import { useProjects } from "./lib/useProjects";
+
+vi.mock("./lib/../../../lib/supabase", () => ({
+  supabase: {},
+  dbTable: (n: string) => `ai_qa_tester_${n}`,
+}));
+
+vi.mock("@mzon7/zon-incubator-sdk", () => ({
+  callEdgeFunction: vi.fn(),
+  reportSelfHealError: vi.fn(),
+}));
+
+describe("useProjects — null safety", () => {
+  it("initialises projects as an empty array", () => {
+    mockCall.mockResolvedValueOnce({ data: { projects: [] }, error: null });
+    const { result } = renderHook(() => useProjects());
+    expect(Array.isArray(result.current.projects)).toBe(true);
+  });
+
+  it("handles data.projects being undefined without throwing (regression)", async () => {
+    // Simulates an edge function returning data without a 'projects' key
+    mockCall.mockResolvedValueOnce({ data: {}, error: null });
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    // State must remain an array — not undefined
+    expect(Array.isArray(result.current.projects)).toBe(true);
+    expect(result.current.projects).toHaveLength(0);
+  });
+
+  it("populates projects when the API returns a valid array", async () => {
+    const projects = [{ id: "p1", url: "https://example.com", user_id: "u1", name: "Test", status: "active", created_at: "", updated_at: "", latest_run_id: null, latest_run_status: null, last_run_at: null }];
+    mockCall.mockResolvedValueOnce({ data: { projects }, error: null });
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.projects).toHaveLength(1);
+    expect(result.current.projects[0].id).toBe("p1");
+  });
+
+  it("sets error state when the API returns an error", async () => {
+    mockCall.mockResolvedValueOnce({ data: null, error: "Unauthorized" });
+    const { result } = renderHook(() => useProjects());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBe("Unauthorized");
+    expect(result.current.projects).toEqual([]);
+  });
+});
