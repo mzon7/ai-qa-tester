@@ -49,7 +49,7 @@ export function useProjects(): UseProjectsReturn {
         });
         return;
       }
-      setProjects(data.projects ?? []);
+      setProjects((data.projects ?? []).filter((p): p is Project => p != null));
     });
 
     return () => { cancelled = true; };
@@ -75,7 +75,7 @@ export function useProjects(): UseProjectsReturn {
 
       setProjects((prev) => {
         // If the project already existed, move it to the top; otherwise prepend
-        const without = prev.filter((p) => p.id !== project.id);
+        const without = prev.filter((p) => p != null && p.id !== project.id);
         return [project, ...without];
       });
 
