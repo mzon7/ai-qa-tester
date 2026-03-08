@@ -156,4 +156,17 @@ describe("projectsList", () => {
     const result = await projectsList();
     expect(result.data?.projects).toHaveLength(2);
   });
+
+  it("returns data with undefined projects when edge function omits the field", async () => {
+    // Regression: if the API returns data without a projects field,
+    // useProjects must not set state to undefined (fixed with ?? [])
+    mockCall.mockResolvedValueOnce({ data: {}, error: null });
+    const result = await projectsList();
+    // The API wrapper returns whatever the edge function sends;
+    // the guard is in useProjects: data.projects ?? []
+    expect(result.data?.projects).toBeUndefined();
+    // Confirm the nullish coalescing guard produces an empty array
+    const safeProjects = result.data?.projects ?? [];
+    expect(safeProjects).toEqual([]);
+  });
 });

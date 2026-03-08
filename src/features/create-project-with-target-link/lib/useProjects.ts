@@ -49,7 +49,7 @@ export function useProjects(): UseProjectsReturn {
         });
         return;
       }
-      setProjects(data.projects);
+      setProjects(data.projects ?? []);
     });
 
     return () => { cancelled = true; };
