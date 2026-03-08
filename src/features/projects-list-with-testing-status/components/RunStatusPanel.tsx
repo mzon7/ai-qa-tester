@@ -1,9 +1,27 @@
+import { useRef, useEffect } from "react";
 import type { Run } from "../../../lib/api";
+import { useRunSSE } from "../../../lib/sse";
 
 interface RunStatusPanelProps {
   run: Run;
   onRerun: () => void;
   rerunLoading: boolean;
+}
+
+const MAX_VISIBLE_LOGS = 100;
+
+const LEVEL_CLS: Record<string, string> = {
+  info: "rlog-info",
+  warn: "rlog-warn",
+  error: "rlog-error",
+};
+
+function fmtLogTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 const STATUS_CONFIG: Record<string, { label: string; dotCls: string; badgeCls: string }> = {
@@ -50,14 +68,35 @@ function needsInputMessage(run: Run): string {
 }
 
 export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatusPanelProps) {
-  const cfg = STATUS_CONFIG[run.status] ?? STATUS_CONFIG.canceled;
+  const isActive = run.status === "queued" || run.status === "running";
+
+  // Subscribe to live SSE only while the run is active
+  const { sseStatus, sseLogs, sseConnected } = useRunSSE(isActive ? run.id : null);
+
+  // Merge SSE status with the prop: SSE is more current when connected
+  const liveStatus = (sseConnected && sseStatus?.status) ? sseStatus.status : run.status;
+
+  const cfg = STATUS_CONFIG[liveStatus] ?? STATUS_CONFIG.canceled;
   const dur = duration(run);
   const needsInput = isNeedsInput(run);
   // Suppress the "Waiting to start…" pulse when we're actually blocked on input
-  const isActive = !needsInput && (run.status === "queued" || run.status === "running");
-  const isDone = run.status === "passed" || run.status === "failed" || run.status === "canceled";
+  const isActiveDisplay = !needsInput && isActive;
+  const isDone = liveStatus === "passed" || liveStatus === "failed" || liveStatus === "canceled";
   // Don't show the plain summary when it's a needs_input message (shown separately below)
   const plainSummary = !needsInput && run.summary ? run.summary : null;
+
+  // Virtualized log list: only render last MAX_VISIBLE_LOGS entries
+  const visibleLogs = sseLogs.length > MAX_VISIBLE_LOGS
+    ? sseLogs.slice(-MAX_VISIBLE_LOGS)
+    : sseLogs;
+
+  // Auto-scroll to bottom when new logs arrive
+  const logsEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (sseLogs.length > 0 && logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [sseLogs.length]);
 
   return (
     <div className="rsp-panel">
@@ -90,12 +129,33 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
         )}
       </div>
 
-      {isActive && (
+      {isActiveDisplay && (
         <div className="rsp-active-indicator">
           <span className="rsp-pulse-ring" aria-hidden="true" />
           <span className="rsp-active-label">
             {run.status === "queued" ? "Waiting to start…" : "Running tests…"}
           </span>
+        </div>
+      )}
+
+      {/* Live log stream — visible while run is active and logs are arriving */}
+      {isActive && sseLogs.length > 0 && (
+        <div className="rsp-live-logs">
+          <div className="rsp-live-logs-header">
+            <span className="rsp-live-logs-title">Live Logs</span>
+            {sseConnected && <span className="rsp-live-dot" aria-label="Connected" />}
+            <span className="rsp-live-logs-count">{sseLogs.length} lines</span>
+          </div>
+          <div className="rsp-live-logs-list" role="log" aria-live="polite" aria-label="Live run logs">
+            {visibleLogs.map((log) => (
+              <div key={log.id} className={`rlog-line ${LEVEL_CLS[log.level] ?? "rlog-info"}`}>
+                <span className="rlog-time">{fmtLogTime(log.ts)}</span>
+                <span className="rlog-level">{log.level.toUpperCase()}</span>
+                <span className="rlog-msg">{log.message}</span>
+              </div>
+            ))}
+            <div ref={logsEndRef} />
+          </div>
         </div>
       )}
 

@@ -1545,6 +1545,54 @@ body {
 }
 .rsp-instructions-label { color: var(--text-muted); font-weight: 600; }
 
+/* ─── RunStatusPanel: live log stream ───────────────────── */
+.rsp-live-logs {
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.rsp-live-logs-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.rsp-live-logs-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rsp-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 5px #22c55e;
+  animation: rsp-live-pulse 1.5s ease-in-out infinite;
+}
+@keyframes rsp-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.rsp-live-logs-count {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-faint);
+}
+.rsp-live-logs-list {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.2rem 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-faint) transparent;
+}
+
 /* ─── RunTabs ────────────────────────────────────────────── */
 .rtabs-container {
   display: flex;
