@@ -18,3 +18,6 @@
 ## Self-Heal Error Reporting
 - Use `callEdgeFunction` from `createProjectClient()` — NOT the raw SDK import
 - Raw `callEdgeFunction` without `projectPrefix` option silently skips error logging
+
+## Learned: ProjectDetails (2026-03-08)
+- The code diff shows a change in the ProjectDetails component that updates the run's status to 'failed' when an infrastructure-level error occurs, addressing the issue of runs getting stuck in 'queued'
