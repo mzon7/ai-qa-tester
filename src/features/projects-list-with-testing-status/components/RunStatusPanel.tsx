@@ -157,6 +157,44 @@ export default function RunStatusPanel({ run, onRerun, rerunLoading }: RunStatus
         </div>
       )}
 
+      {/* Progress: step title + segmented bar + counts */}
+      {isActive && (hasSteps || liveStatus === "running") && (
+        <div className="rsp-progress">
+          {runningStep && (
+            <p className="rsp-step-current" aria-live="polite">
+              <span className="rsp-step-label">
+                Step {sseSteps.indexOf(runningStep) + 1}/{totalSteps}
+              </span>
+              {runningStep.title}
+            </p>
+          )}
+
+          <div className="rsp-progress-track" role="progressbar"
+               aria-valuemin={0} aria-valuemax={totalSteps}
+               aria-valuenow={passedSteps + failedSteps}
+               aria-label="Step progress">
+            {hasSteps ? (
+              <>
+                <span className="rsp-progress-fill rsp-progress-passed"
+                      style={{ width: `${passedPct}%` }} />
+                <span className="rsp-progress-fill rsp-progress-failed"
+                      style={{ width: `${failedPct}%` }} />
+              </>
+            ) : (
+              <span className="rsp-progress-indeterminate" />
+            )}
+          </div>
+
+          {hasSteps && (
+            <p className="rsp-progress-stats">
+              {passedSteps > 0 && <span className="rsp-stat-passed">{passedSteps} passed</span>}
+              {failedSteps > 0 && <span className="rsp-stat-failed">{failedSteps} failed</span>}
+              {pendingSteps > 0 && <span className="rsp-stat-pending">{pendingSteps} pending</span>}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Live log stream — visible while run is active and logs are arriving */}
       {isActive && sseLogs.length > 0 && (
         <div className="rsp-live-logs">
