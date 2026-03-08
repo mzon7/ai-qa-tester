@@ -110,6 +110,14 @@ export default function ProjectDetails({ project, onBack }: ProjectDetailsProps)
           projectPrefix: "ai_qa_tester_",
           metadata: { action: "runsFeaturePlan", runId },
         });
+        // Infrastructure-level failure (non-2xx from Supabase gateway, timeout, etc.)
+        // The edge function never ran, so the run stays "queued" forever — mark it failed.
+        supabase
+          .from("ai_qa_tester_qa_runs")
+          .update({ status: "failed", error: `Feature planning failed: ${planErr}` })
+          .eq("id", runId)
+          .then(() => refresh());
+        return;
       }
       refresh();
       return;
