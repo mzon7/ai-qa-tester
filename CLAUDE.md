@@ -1,5 +1,11 @@
 # Project Rules
 
+## Task Discipline
+- Focus on the assigned task. Do not scope-creep into unrelated refactors, cleanups, or improvements.
+- Do not fix unrelated code, add unrelated features, or reorganize files that are not part of the current task.
+- If you discover a separate issue while working, note it in \`known_issues.md\` — do not fix it in this session.
+- Finish the current task fully (including validation) before considering anything else.
+
 ## Response Style
 - Do not output entire files unless creating a new file.
 - When editing code, show only the minimal changed lines.
@@ -213,9 +219,17 @@ try {
 - If you create new SSH keys or discover new servers, store them via the Supabase API (instructions in your context)
 - Do NOT create TODOs asking the user to deploy — if you have SSH access, do it yourself
 - Do NOT provision new droplets unless explicitly asked
+
 ## Project Context Files
-- `architecture.md` — system design, data flow, key files. Read before making architectural decisions.
-- `known_patterns.md` — established patterns and lessons learned. Follow these before inventing new approaches.
-- `known_issues.md` — past errors and fix attempts. If a previous approach failed, try something different.
-- `project_state.md` — current feature status and recent changes.
-- These files are maintained by the incubator daemon. You may read them but do not delete their content.
+- Read these files at the start of each task for context on the current state of the project.
+
+### Living files (update frequently)
+- \`project_state.md\` — current feature status, active priorities, recent changes. Update after completing any task.
+- \`known_issues.md\` — past errors and fix attempts. Update when bugs are found or resolved. If a previous fix approach failed, try something different.
+- \`known_patterns.md\` — established patterns and reusable lessons. Update when you discover a pattern worth remembering.
+
+### Semi-stable files (update only when system design materially changes)
+- \`architecture.md\` — system design, data flow, key files, shared conventions. Update ONLY when: a new subsystem is introduced, a shared abstraction changes, data flow changes materially, or a project-wide convention is adopted. Do not update for minor changes.
+
+### Do not modify
+- \`CLAUDE.md\` — project rules and policies. Maintained by the project owner.

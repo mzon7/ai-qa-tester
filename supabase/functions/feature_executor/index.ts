@@ -53,12 +53,12 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .single();
 
-    if (runErr || !run) return json({ data: null, error: "Run not found" }, 404);
+    if (runErr || !run) return json({ data: null, error: "Run not found" }, 200);
     if (!run.feature_description) {
-      return json({ data: null, error: "This run has no feature description — feature executor requires a feature_description" }, 400);
+      return json({ data: null, error: "This run has no feature description — feature executor requires a feature_description" }, 200);
     }
     if (!["queued", "running"].includes(run.status)) {
-      return json({ data: null, error: `Run is already ${run.status}` }, 409);
+      return json({ data: null, error: `Run is already ${run.status}` }, 200);
     }
 
     // ── Check Playwright server is configured ──────────────────────────────
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       return json({
         data: null,
         error: "Playwright server not configured. Set PLAYWRIGHT_SERVER_URL and PLAYWRIGHT_SCAN_SECRET.",
-      }, 503);
+      }, 200);
     }
 
     // ── Dispatch to Playwright server ───────────────────────────────────────
@@ -85,14 +85,14 @@ Deno.serve(async (req) => {
 
     if (!execRes.ok) {
       const errText = await execRes.text().catch(() => execRes.statusText);
-      return json({ data: null, error: `Playwright server error (${execRes.status}): ${errText}` }, 502);
+      return json({ data: null, error: `Playwright server error (${execRes.status}): ${errText}` }, 200);
     }
 
     return json({
       data: { accepted: true, run_id, message: "Feature step execution started — poll run status for updates" },
       error: null,
-    }, 202);
+    }, 200);
   } catch (err) {
-    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" }, 200);
   }
 });
