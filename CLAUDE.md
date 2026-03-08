@@ -213,3 +213,9 @@ try {
 - If you create new SSH keys or discover new servers, store them via the Supabase API (instructions in your context)
 - Do NOT create TODOs asking the user to deploy — if you have SSH access, do it yourself
 - Do NOT provision new droplets unless explicitly asked
+## Project Context Files
+- `architecture.md` — system design, data flow, key files. Read before making architectural decisions.
+- `known_patterns.md` — established patterns and lessons learned. Follow these before inventing new approaches.
+- `known_issues.md` — past errors and fix attempts. If a previous approach failed, try something different.
+- `project_state.md` — current feature status and recent changes.
+- These files are maintained by the incubator daemon. You may read them but do not delete their content.
