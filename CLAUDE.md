@@ -200,11 +200,10 @@ try {
 - Use minimal/safe test data that exercises the happy path (e.g. a short test message for chat functions)
 - If the function needs a real DB record ID, use a zero UUID that returns a controlled 4xx (not 5xx)
 - Edge functions are auto-deployed by the build system — you do NOT need to deploy manually
-## Runtime Environment & Playwright Droplet
-- This project runs on the daemon droplet (159.203.58.51)
-- A SEPARATE Playwright droplet is already provisioned at 209.38.0.23 (hostname: QA-tester-playwright)
-- SSH access is configured: ssh root@209.38.0.23 works from this server
-- Playwright server files are at: /workspace/playwright-server/ on the Playwright droplet
-- To deploy updated server files: scp them to root@209.38.0.23:/workspace/playwright-server/ then restart via: ssh root@209.38.0.23 "cd /workspace/playwright-server && pm2 restart all"
-- Do NOT create TODOs asking the user to deploy to the Playwright droplet — you have SSH access, do it yourself
-- Do NOT provision new droplets — the Playwright droplet already exists
+## Runtime Environment
+- This project runs on a Linux server with full shell access
+- Server credentials (SSH keys, IPs) for external servers are injected automatically from the database — check your context for [SERVER CREDENTIALS] block
+- If you need to deploy to an external server, use the SSH credentials provided in your context
+- If you create new SSH keys or discover new servers, store them via the Supabase API (instructions in your context)
+- Do NOT create TODOs asking the user to deploy — if you have SSH access, do it yourself
+- Do NOT provision new droplets unless explicitly asked
