@@ -89,8 +89,13 @@ describe("normalizeUrl", () => {
 
 vi.mock("@mzon7/zon-incubator-sdk", () => ({
   callEdgeFunction: vi.fn(),
+  reportSelfHealError: vi.fn(),
 }));
 vi.mock("../../lib/supabase", () => ({
+  supabase: {},
+  dbTable: (n: string) => `ai_qa_tester_${n}`,
+}));
+vi.mock("./lib/../../../lib/supabase", () => ({
   supabase: {},
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
@@ -175,16 +180,6 @@ describe("projectsList", () => {
 
 import { renderHook, waitFor } from "@testing-library/react";
 import { useProjects } from "./lib/useProjects";
-
-vi.mock("./lib/../../../lib/supabase", () => ({
-  supabase: {},
-  dbTable: (n: string) => `ai_qa_tester_${n}`,
-}));
-
-vi.mock("@mzon7/zon-incubator-sdk", () => ({
-  callEdgeFunction: vi.fn(),
-  reportSelfHealError: vi.fn(),
-}));
 
 describe("useProjects — null safety", () => {
   it("initialises projects as an empty array", () => {
