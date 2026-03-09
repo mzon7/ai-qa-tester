@@ -30,10 +30,35 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setLoading(true);
     setError(null);
 
-    runsListByProject(projectId).then(({ data, error: err }) => {
+    const fetchRuns = () => runsListByProject(projectId).then(({ data, error: err }) => {
       if (cancelled) return;
-      setLoading(false);
       if (err || !data) {
+        // Retry once on transient network errors before surfacing the failure
+        const isNetworkError = err?.includes("Failed to send a request") || err?.includes("fetch");
+        if (isNetworkError) {
+          setTimeout(() => {
+            if (cancelled) return;
+            runsListByProject(projectId).then(({ data: retryData, error: retryErr }) => {
+              if (cancelled) return;
+              setLoading(false);
+              if (retryErr || !retryData) {
+                const msg = retryErr ?? "Failed to load runs";
+                setError(msg);
+                reportSelfHealError(supabase, {
+                  category: "frontend",
+                  source: "useRuns",
+                  errorMessage: msg,
+                  projectPrefix: "ai_qa_tester_",
+                  metadata: { action: "runsListByProject", projectId, retried: true },
+                });
+                return;
+              }
+              setRuns(retryData.runs ?? []);
+            });
+          }, 2000);
+          return;
+        }
+        setLoading(false);
         const msg = err ?? "Failed to load runs";
         setError(msg);
         reportSelfHealError(supabase, {
@@ -45,8 +70,10 @@ export function useRuns(projectId: string | null): UseRunsReturn {
         });
         return;
       }
-      setRuns(data.runs);
+      setLoading(false);
+      setRuns(data.runs ?? []);
     });
+    fetchRuns();
 
     return () => { cancelled = true; };
   }, [projectId, rev]);
