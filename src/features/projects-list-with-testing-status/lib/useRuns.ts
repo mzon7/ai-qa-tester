@@ -67,6 +67,7 @@ export function useRuns(projectId: string | null): UseRunsReturn {
           setLoading(false);
           // Swallow transient fetch failures during background polling
         });
+    };
     fetchRuns();
 
     return () => { cancelled = true; };
