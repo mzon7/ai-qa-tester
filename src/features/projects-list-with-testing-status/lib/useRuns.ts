@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
-import { runsCreate, runsGet } from "../../../lib/api";
+import { runsCreate } from "../../../lib/api";
 import type { Run, RunStep, RunLog, ScopeMode } from "../../../lib/api";
 import { supabase, dbTable } from "../../../lib/supabase";
 
@@ -110,25 +110,34 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
     setLoading(true);
     setError(null);
 
-    runsGet(runId).then(({ data, error: err }) => {
+    const fetchDetail = async () => {
+      // Query DB directly — avoids edge function auth issues during polling.
+      const [runResult, stepsResult, logsResult] = await Promise.all([
+        supabase
+          .from(dbTable("qa_runs"))
+          .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
+          .eq("id", runId)
+          .single(),
+        supabase
+          .from(dbTable("qa_run_steps"))
+          .select("id, run_id, idx, title, expected, status, notes, started_at, completed_at")
+          .eq("run_id", runId)
+          .order("idx", { ascending: true }),
+        supabase
+          .from(dbTable("qa_run_logs"))
+          .select("id, run_id, ts, level, message, step_id")
+          .eq("run_id", runId)
+          .order("ts", { ascending: true })
+          .limit(500),
+      ]);
       if (cancelled) return;
       setLoading(false);
-      if (err || !data) {
-        const msg = err ?? "Failed to load run";
-        setError(msg);
-        reportSelfHealError(supabase, {
-          category: "frontend",
-          source: "useRunDetail",
-          errorMessage: msg,
-          projectPrefix: "ai_qa_tester_",
-          metadata: { action: "runsGet", runId },
-        });
-        return;
-      }
-      setRun(data.run);
-      setSteps(data.steps);
-      setLogs(data.logs);
-    });
+      if (runResult.error || !runResult.data) return;
+      setRun(runResult.data as unknown as Run);
+      setSteps((stepsResult.data ?? []) as unknown as RunStep[]);
+      setLogs((logsResult.data ?? []) as unknown as RunLog[]);
+    };
+    fetchDetail();
 
     return () => { cancelled = true; };
   }, [runId, rev]);
