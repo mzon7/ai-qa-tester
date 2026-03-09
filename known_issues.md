@@ -20,3 +20,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the error handling in the `handleBroken` function was modified to set a simulated error message instead of throwing an actual error, which addresses the original TypeError.
 - Status: unresolved
+
+## [2026-03-09 00:41] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the error handling was modified to return 200 status codes for all responses, which addresses the issue of the Supabase SDK failing to send requests due to non-2xx status codes.
+- Status: unresolved

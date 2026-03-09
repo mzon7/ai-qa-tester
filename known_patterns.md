@@ -27,3 +27,6 @@
 
 ## Learned: TestTargetPage.tsx (2026-03-08)
 - The code diff shows that the error handling in the `handleBroken` function was modified to set a simulated error message instead of throwing an actual error, which addresses the original TypeError.
+
+## Learned: useRuns (2026-03-09)
+- The code diff shows that the error handling was modified to return 200 status codes for all responses, which addresses the issue of the Supabase SDK failing to send requests due to non-2xx status code
