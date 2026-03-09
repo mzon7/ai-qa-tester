@@ -36,3 +36,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff shows a change that replaces the session validation method with a more appropriate user validation method, addressing the 'Unauthorized' error.
+
+## Learned: useRuns (2026-03-09)
+- The code diff shows that the error reporting for unauthorized access has been removed, which addresses the issue of false-positive error reports related to unauthorized errors.
