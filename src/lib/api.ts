@@ -6,7 +6,7 @@
  */
 
 import { callEdgeFunction } from "@mzon7/zon-incubator-sdk";
-import { supabase } from "./supabase";
+import { supabase, dbTable } from "./supabase";
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
@@ -145,9 +145,17 @@ export function runsCreate(
   });
 }
 
-/** List all runs for a project, newest first. */
-export function runsListByProject(project_id: string) {
-  return callEdgeFunction<ListRunsResult>(supabase, "runs_list_by_project", { project_id });
+/** List all runs for a project, newest first. Uses direct DB query to avoid
+ *  edge-function auth issues that caused recurring Unauthorized errors. */
+export async function runsListByProject(project_id: string): Promise<{ data: ListRunsResult | null; error: string | null }> {
+  const { data, error } = await supabase
+    .from(dbTable("qa_runs"))
+    .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
+    .eq("project_id", project_id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return { data: null, error: error.message };
+  return { data: { runs: (data ?? []) as Run[] }, error: null };
 }
 
 /** Get a single run with its steps and logs. */
