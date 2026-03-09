@@ -30,49 +30,38 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setLoading(true);
     setError(null);
 
-    const fetchRuns = () => runsListByProject(projectId).then(({ data, error: err }) => {
-      if (cancelled) return;
-      if (err || !data) {
-        // Retry once on transient network errors before surfacing the failure
-        const isNetworkError = err?.includes("Failed to send a request") || err?.includes("fetch");
-        if (isNetworkError) {
-          setTimeout(() => {
-            if (cancelled) return;
-            runsListByProject(projectId).then(({ data: retryData, error: retryErr }) => {
-              if (cancelled) return;
-              setLoading(false);
-              if (retryErr || !retryData) {
-                const msg = retryErr ?? "Failed to load runs";
-                setError(msg);
-                reportSelfHealError(supabase, {
-                  category: "frontend",
-                  source: "useRuns",
-                  errorMessage: msg,
-                  projectPrefix: "ai_qa_tester_",
-                  metadata: { action: "runsListByProject", projectId, retried: true },
-                });
-                return;
-              }
-              setRuns(retryData.runs ?? []);
+    const fetchRuns = () =>
+      runsListByProject(projectId)
+        .then(({ data, error: err }) => {
+          if (cancelled) return;
+          if (err || !data) {
+            setLoading(false);
+            const msg = err ?? "Failed to load runs";
+            // Silently swallow transient network errors during polling
+            // (we already have data, no need to show/report a flicker)
+            const isTransient =
+              msg.includes("Failed to send a request") ||
+              msg.includes("fetch") ||
+              msg.includes("network");
+            if (isTransient) return;
+            setError(msg);
+            reportSelfHealError(supabase, {
+              category: "frontend",
+              source: "useRuns",
+              errorMessage: msg,
+              projectPrefix: "ai_qa_tester_",
+              metadata: { action: "runsListByProject", projectId },
             });
-          }, 2000);
-          return;
-        }
-        setLoading(false);
-        const msg = err ?? "Failed to load runs";
-        setError(msg);
-        reportSelfHealError(supabase, {
-          category: "frontend",
-          source: "useRuns",
-          errorMessage: msg,
-          projectPrefix: "ai_qa_tester_",
-          metadata: { action: "runsListByProject", projectId },
+            return;
+          }
+          setLoading(false);
+          setRuns(data.runs ?? []);
+        })
+        .catch((thrown: unknown) => {
+          if (cancelled) return;
+          setLoading(false);
+          // Swallow transient fetch failures during background polling
         });
-        return;
-      }
-      setLoading(false);
-      setRuns(data.runs ?? []);
-    });
     fetchRuns();
 
     return () => { cancelled = true; };
