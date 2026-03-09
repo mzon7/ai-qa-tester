@@ -95,3 +95,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff only updates documentation files and does not include any changes to the source code that would address the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-09 23:56] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a change in the `runsListByProject` function to query the database directly, which addresses the 'Unauthorized' error by avoiding the edge function.
+- Status: unresolved
