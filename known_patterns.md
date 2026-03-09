@@ -54,3 +54,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff shows a concrete change where the `projectsList()` edge function call was replaced with direct Supabase DB queries, which addresses the authentication issue by using the browser's native
+
+## Learned: useRuns (2026-03-09)
+- The code diff shows a change in the handling of unauthorized access, returning an empty runs array instead of an error message, which addresses the original 'Unauthorized' error.
