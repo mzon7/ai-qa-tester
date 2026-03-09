@@ -75,3 +75,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes changes that handle unauthorized errors by preventing them from being reported as self-heal errors, which addresses the root cause of the 'Unauthorized' issue.
 - Status: unresolved
+
+## [2026-03-09 23:41] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a concrete change where the `projectsList()` edge function call was replaced with direct Supabase DB queries, which addresses the authentication issue by using the browser's native Supabase session for handling authentication.
+- Status: unresolved
