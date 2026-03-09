@@ -33,3 +33,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff includes a retry mechanism for transient network errors, which directly addresses the original error of failing to send a request to the Edge Function.
+
+## Learned: useRuns (2026-03-09)
+- The code diff shows a change that replaces the session validation method with a more appropriate user validation method, addressing the 'Unauthorized' error.
