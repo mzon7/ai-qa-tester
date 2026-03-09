@@ -30,3 +30,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff shows that the error handling was modified to return 200 status codes for all responses, which addresses the issue of the Supabase SDK failing to send requests due to non-2xx status code
+
+## Learned: useRuns (2026-03-09)
+- The code diff includes a retry mechanism for transient network errors, which directly addresses the original error of failing to send a request to the Edge Function.

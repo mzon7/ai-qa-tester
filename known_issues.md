@@ -25,3 +25,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the error handling was modified to return 200 status codes for all responses, which addresses the issue of the Supabase SDK failing to send requests due to non-2xx status codes.
 - Status: unresolved
+
+## [2026-03-09 01:36] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff includes a retry mechanism for transient network errors, which directly addresses the original error of failing to send a request to the Edge Function.
+- Status: unresolved
