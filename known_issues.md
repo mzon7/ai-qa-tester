@@ -35,3 +35,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes changes that handle errors more gracefully and adds a catch block to manage rejected promises, addressing the original error of failing to send a request.
 - Status: unresolved
+
+## [2026-03-09 23:08] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session check before fetching runs and treats 'Unauthorized' as a transient error, addressing the original authentication issue.
+- Status: unresolved
