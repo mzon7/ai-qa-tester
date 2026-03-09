@@ -30,19 +30,24 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setLoading(true);
     setError(null);
 
-    const fetchRuns = () =>
-      runsListByProject(projectId)
+    const fetchRuns = async () => {
+      // Skip fetch if no valid session — avoids Unauthorized errors during
+      // polling when the JWT is being refreshed or the session has expired.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session) return;
+
+      return runsListByProject(projectId)
         .then(({ data, error: err }) => {
           if (cancelled) return;
           if (err || !data) {
             setLoading(false);
             const msg = err ?? "Failed to load runs";
-            // Silently swallow transient network errors during polling
-            // (we already have data, no need to show/report a flicker)
+            // Silently swallow transient errors during polling
             const isTransient =
               msg.includes("Failed to send a request") ||
               msg.includes("fetch") ||
-              msg.includes("network");
+              msg.includes("network") ||
+              msg === "Unauthorized";
             if (isTransient) return;
             setError(msg);
             reportSelfHealError(supabase, {
