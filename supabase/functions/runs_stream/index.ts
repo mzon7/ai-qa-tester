@@ -50,22 +50,28 @@ Deno.serve(async (req) => {
     });
   }
 
-  const supabase = createClient(
+  const userClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
   );
 
-  // Validate JWT
+  // Validate JWT using user-scoped client (service-role key cannot validate user JWTs)
   const {
     data: { user },
     error: authError,
-  } = await supabase.auth.getUser(token);
+  } = await userClient.auth.getUser();
   if (authError || !user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...CORS, "Content-Type": "application/json" },
     });
   }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   // Verify the run belongs to this user
   const { data: runCheck } = await supabase

@@ -26,15 +26,23 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return json({ data: null, error: "Missing Authorization header" }, 200);
 
-    const supabase = createClient(
+    // Use a user-scoped client (anon key + user JWT) to validate the session.
+    // This is the correct Supabase pattern — using the service role key to call
+    // auth.getUser(jwt) can silently fail when passed a non-user token (e.g. anon key).
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) return json({ data: null, error: "Unauthorized" }, 200);
+
+    // Use service-role client for DB operations (bypasses RLS).
+    const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace("Bearer ", "")
-    );
-    if (authError || !user) return json({ data: null, error: "Unauthorized" }, 200);
 
     const body = await req.json();
     const { project_id } = body as { project_id: string };
@@ -44,7 +52,7 @@ Deno.serve(async (req) => {
     }
 
     // Verify the project belongs to this user
-    const { data: project, error: projError } = await supabase
+    const { data: project, error: projError } = await adminClient
       .from("ai_qa_tester_projects")
       .select("id")
       .eq("id", project_id)
@@ -55,7 +63,7 @@ Deno.serve(async (req) => {
       return json({ data: null, error: "Project not found" });
     }
 
-    const { data: runs, error: runsError } = await supabase
+    const { data: runs, error: runsError } = await adminClient
       .from("ai_qa_tester_qa_runs")
       .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
       .eq("project_id", project_id)

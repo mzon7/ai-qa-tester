@@ -62,7 +62,7 @@ export function useRuns(projectId: string | null): UseRunsReturn {
           setLoading(false);
           setRuns(data.runs ?? []);
         })
-        .catch((thrown: unknown) => {
+        .catch((_thrown: unknown) => {
           if (cancelled) return;
           setLoading(false);
           // Swallow transient fetch failures during background polling
