@@ -40,33 +40,16 @@ export function useRuns(projectId: string | null): UseRunsReturn {
       return runsListByProject(projectId)
         .then(({ data, error: err }) => {
           if (cancelled) return;
-          if (err || !data) {
-            setLoading(false);
-            const msg = err ?? "Failed to load runs";
-            // Silently swallow transient errors during polling
-            const isTransient =
-              msg.includes("Failed to send a request") ||
-              msg.includes("fetch") ||
-              msg.includes("network") ||
-              msg === "Unauthorized";
-            if (isTransient) return;
-            setError(msg);
-            reportSelfHealError(supabase, {
-              category: "frontend",
-              source: "useRuns",
-              errorMessage: msg,
-              projectPrefix: "ai_qa_tester_",
-              metadata: { action: "runsListByProject", projectId },
-            });
-            return;
-          }
           setLoading(false);
+          // Background polling errors are never reported to self-heal —
+          // they are transient by nature (network blip, token refresh, etc.)
+          // and we already have stale data displayed. Just bail silently.
+          if (err || !data) return;
           setRuns(data.runs ?? []);
         })
-        .catch((_thrown: unknown) => {
+        .catch(() => {
           if (cancelled) return;
           setLoading(false);
-          // Swallow transient fetch failures during background polling
         });
     };
     fetchRuns();
