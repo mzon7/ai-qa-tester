@@ -60,3 +60,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a change that replaces the edge function call with a direct database query, addressing the 'Unauthorized' error by handling authentication through Supabase's session cookie.
 - Status: unresolved
+
+## [2026-03-09 23:32] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff only updates documentation files and does not include any changes to the source code that would address the 'Unauthorized' error.
+- Status: unresolved
