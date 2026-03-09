@@ -68,13 +68,19 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     const { data, error: err } = await runsCreate(projectId, scopeMode, instructions, featureDescription);
     if (err || !data) {
       const msg = err ?? "Failed to create run";
-      reportSelfHealError(supabase, {
-        category: "frontend",
-        source: "useRuns",
-        errorMessage: msg,
-        projectPrefix: "ai_qa_tester_",
-        metadata: { action: "runsCreate", projectId, scopeMode },
-      });
+      // Skip self-heal reporting for auth errors — these resolve on their own
+      // (session refresh / re-login) and are not actionable infrastructure bugs.
+      const isAuthError = msg.toLowerCase().includes("unauthorized") ||
+        msg.toLowerCase().includes("missing authorization");
+      if (!isAuthError) {
+        reportSelfHealError(supabase, {
+          category: "frontend",
+          source: "useRuns",
+          errorMessage: msg,
+          projectPrefix: "ai_qa_tester_",
+          metadata: { action: "runsCreate", projectId, scopeMode },
+        });
+      }
       return { run: null, error: msg };
     }
     setRuns((prev) => [data.run, ...prev]);
