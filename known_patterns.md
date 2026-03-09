@@ -45,3 +45,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff only updates documentation files and does not include any changes to the source code that would address the 'Unauthorized' error.
+
+## Learned: useRuns (2026-03-09)
+- The code diff shows a change where the `runsGet` function was replaced with direct database queries using Supabase, which addresses the authentication issue by avoiding edge function calls that could 
