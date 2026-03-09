@@ -36,7 +36,10 @@ Deno.serve(async (req) => {
     );
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) return json({ data: null, error: "Unauthorized" }, 200);
+    // Return empty runs (not an error) for auth failures on this read endpoint.
+    // This prevents old cached browser code from triggering self-heal reports
+    // when tokens are temporarily invalid (session refresh race, PWA cache).
+    if (authError || !user) return json({ data: { runs: [] }, error: null }, 200);
 
     // Use service-role client for DB operations (bypasses RLS).
     const adminClient = createClient(
