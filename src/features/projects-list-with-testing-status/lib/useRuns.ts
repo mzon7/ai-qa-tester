@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
-import { runsCreate, runsListByProject, runsGet } from "../../../lib/api";
+import { runsCreate, runsGet } from "../../../lib/api";
 import type { Run, RunStep, RunLog, ScopeMode } from "../../../lib/api";
-import { supabase } from "../../../lib/supabase";
+import { supabase, dbTable } from "../../../lib/supabase";
 
 const ACTIVE_STATUSES = new Set(["queued", "running"]);
 
@@ -31,26 +31,19 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setError(null);
 
     const fetchRuns = async () => {
-      // Validate the session with the auth server before fetching.
-      // getUser() (not getSession()) triggers a token refresh if expired,
-      // preventing stale/expired JWTs from reaching the edge function.
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
-
-      return runsListByProject(projectId)
-        .then(({ data, error: err }) => {
-          if (cancelled) return;
-          setLoading(false);
-          // Background polling errors are never reported to self-heal —
-          // they are transient by nature (network blip, token refresh, etc.)
-          // and we already have stale data displayed. Just bail silently.
-          if (err || !data) return;
-          setRuns(data.runs ?? []);
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setLoading(false);
-        });
+      // Query the DB directly instead of via edge function — this avoids the
+      // entire auth-token-over-HTTP problem that caused recurring Unauthorized
+      // errors during background polling. RLS enforces user_id ownership.
+      const { data, error: err } = await supabase
+        .from(dbTable("qa_runs"))
+        .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (cancelled) return;
+      setLoading(false);
+      if (err || !data) return;
+      setRuns(data as Run[]);
     };
     fetchRuns();
 
