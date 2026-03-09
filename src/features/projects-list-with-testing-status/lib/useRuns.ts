@@ -31,10 +31,11 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setError(null);
 
     const fetchRuns = async () => {
-      // Skip fetch if no valid session — avoids Unauthorized errors during
-      // polling when the JWT is being refreshed or the session has expired.
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session) return;
+      // Validate the session with the auth server before fetching.
+      // getUser() (not getSession()) triggers a token refresh if expired,
+      // preventing stale/expired JWTs from reaching the edge function.
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) return;
 
       return runsListByProject(projectId)
         .then(({ data, error: err }) => {
