@@ -55,3 +55,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the error reporting for unauthorized access has been removed, which addresses the issue of false-positive error reports related to unauthorized errors.
 - Status: unresolved
+
+## [2026-03-09 23:29] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a change that replaces the edge function call with a direct database query, addressing the 'Unauthorized' error by handling authentication through Supabase's session cookie.
+- Status: unresolved
