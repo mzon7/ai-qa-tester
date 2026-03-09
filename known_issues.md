@@ -40,3 +40,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session check before fetching runs and treats 'Unauthorized' as a transient error, addressing the original authentication issue.
 - Status: unresolved
+
+## [2026-03-09 23:18] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows concrete changes in multiple files that correctly implement user-scoped authentication, addressing the 'Unauthorized' error by using the appropriate Supabase client pattern.
+- Status: unresolved
