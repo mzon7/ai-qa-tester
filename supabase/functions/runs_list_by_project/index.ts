@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     const { project_id } = body as { project_id: string };
 
     if (!project_id?.trim()) {
-      return json({ data: null, error: "project_id is required" }, 400);
+      return json({ data: null, error: "project_id is required" });
     }
 
     // Verify the project belongs to this user
@@ -52,21 +52,21 @@ Deno.serve(async (req) => {
       .single();
 
     if (projError || !project) {
-      return json({ data: null, error: "Project not found" }, 404);
+      return json({ data: null, error: "Project not found" });
     }
 
     const { data: runs, error: runsError } = await supabase
       .from("ai_qa_tester_qa_runs")
-      .select("id, project_id, user_id, status, scope_mode, instructions, started_at, completed_at, summary, error, created_at")
+      .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
       .eq("project_id", project_id)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (runsError) return json({ data: null, error: runsError.message }, 500);
+    if (runsError) return json({ data: null, error: runsError.message });
 
     return json({ data: { runs: runs ?? [] }, error: null });
   } catch (err) {
-    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: (err as Error)?.message ?? "Unexpected error" });
   }
 });
