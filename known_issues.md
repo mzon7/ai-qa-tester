@@ -150,3 +150,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that error handling was improved by setting the error message in the state, which addresses the unauthorized error by ensuring that errors are not silently discarded.
 - Status: unresolved
+
+## [2026-03-10 00:52] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the `refreshSession` method was added to handle cases where the session is null, which directly addresses the 'Unauthorized' error by attempting to refresh the session before failing.
+- Status: unresolved
