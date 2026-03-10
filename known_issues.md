@@ -195,3 +195,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes changes that handle authentication state changes, which directly address the 'Unauthorized' error by managing the state on sign-out and refreshing the token.
 - Status: unresolved
+
+## [2026-03-10 01:21] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff only adds functionality related to authentication state changes in the `useProjects` file, but does not address the original 'Unauthorized' error in the `useRuns` function or any related source file.
+- Status: unresolved
