@@ -148,6 +148,9 @@ export function runsCreate(
 /** List all runs for a project, newest first. Uses direct DB query to avoid
  *  edge-function auth issues that caused recurring Unauthorized errors. */
 export async function runsListByProject(project_id: string): Promise<{ data: ListRunsResult | null; error: string | null }> {
+  // Session guard — return empty rather than letting RLS produce an Unauthorized error.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { data: { runs: [] }, error: null };
   const { data, error } = await supabase
     .from(dbTable("qa_runs"))
     .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
