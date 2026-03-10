@@ -164,6 +164,9 @@ export async function runsListByProject(project_id: string): Promise<{ data: Lis
 /** Get a single run with its steps and logs. Uses direct DB query to avoid
  *  edge-function auth issues that caused recurring Unauthorized errors. */
 export async function runsGet(run_id: string): Promise<{ data: GetRunResult | null; error: string | null }> {
+  // Session guard — avoid letting RLS surface "Unauthorized" when no session.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { data: null, error: "No active session" };
   const [runResult, stepsResult, logsResult] = await Promise.all([
     supabase
       .from(dbTable("qa_runs"))
