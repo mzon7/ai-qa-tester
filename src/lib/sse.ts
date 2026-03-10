@@ -154,7 +154,12 @@ export function useRunSSE(
         });
 
         if (!res.ok || !res.body) {
-          // Non-2xx or no body — back off and retry
+          // 401 = session expired — stop reconnecting; a re-login is required
+          if (res.status === 401) {
+            setSseConnected(false);
+            return;
+          }
+          // Other non-2xx or no body — back off and retry
           scheduleReconnect();
           return;
         }
