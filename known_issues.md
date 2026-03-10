@@ -120,3 +120,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes a change that handles the 401 Unauthorized error by stopping the reconnection attempts, which directly addresses the authentication issue.
 - Status: unresolved
+
+## [2026-03-10 00:32] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff does not address the 'Unauthorized' error; it only simplifies the interval handling without fixing any authentication or authorization issues.
+- Status: unresolved
