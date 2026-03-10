@@ -44,6 +44,8 @@ export function useProjects(): UseProjectsReturn {
       if (cancelled) return;
       if (projErr || !projectRows) {
         setLoading(false);
+        if (projErr) setError(projErr.message);
+        setProjects([]);
         return;
       }
 

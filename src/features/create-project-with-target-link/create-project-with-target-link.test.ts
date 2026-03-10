@@ -91,12 +91,29 @@ vi.mock("@mzon7/zon-incubator-sdk", () => ({
   callEdgeFunction: vi.fn(),
   reportSelfHealError: vi.fn(),
 }));
+// vi.hoisted ensures mockFrom is available before vi.mock hoisting runs.
+const { mockFrom } = vi.hoisted(() => ({ mockFrom: vi.fn() }));
+
+// Supabase chain builder used by both projectsCreate (api.ts) and useProjects (direct DB).
+// Resolves at terminal methods: limit, single, insert.
+function buildChain(resolved: unknown) {
+  const c: Record<string, unknown> = {};
+  for (const m of ["select", "order", "eq", "in", "single", "insert", "limit"]) {
+    c[m] = vi.fn(() =>
+      m === "limit" || m === "single" || m === "insert"
+        ? Promise.resolve(resolved)
+        : c
+    );
+  }
+  return c;
+}
+
 vi.mock("../../lib/supabase", () => ({
-  supabase: {},
+  supabase: { from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 vi.mock("./lib/../../../lib/supabase", () => ({
-  supabase: {},
+  supabase: { from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 
@@ -249,24 +266,23 @@ import { useProjects } from "./lib/useProjects";
 
 describe("useProjects — null safety", () => {
   it("initialises projects as an empty array", () => {
-    mockCall.mockResolvedValueOnce({ data: { projects: [] }, error: null });
+    mockFrom.mockReturnValue(buildChain({ data: [], error: null }));
     const { result } = renderHook(() => useProjects());
     expect(Array.isArray(result.current.projects)).toBe(true);
   });
 
   it("handles data.projects being undefined without throwing (regression)", async () => {
-    // Simulates an edge function returning data without a 'projects' key
-    mockCall.mockResolvedValueOnce({ data: {}, error: null });
+    // Simulates DB returning null rows — hook must not crash and must keep empty array
+    mockFrom.mockReturnValue(buildChain({ data: null, error: null }));
     const { result } = renderHook(() => useProjects());
     await waitFor(() => expect(result.current.loading).toBe(false));
-    // State must remain an array — not undefined
     expect(Array.isArray(result.current.projects)).toBe(true);
     expect(result.current.projects).toHaveLength(0);
   });
 
   it("populates projects when the API returns a valid array", async () => {
-    const projects = [{ id: "p1", url: "https://example.com", user_id: "u1", name: "Test", status: "active", created_at: "", updated_at: "", latest_run_id: null, latest_run_status: null, last_run_at: null }];
-    mockCall.mockResolvedValueOnce({ data: { projects }, error: null });
+    const rows = [{ id: "p1", user_id: "u1", name: "Test", url: "https://example.com", status: "active", created_at: "", updated_at: "" }];
+    mockFrom.mockReturnValue(buildChain({ data: rows, error: null }));
     const { result } = renderHook(() => useProjects());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.projects).toHaveLength(1);
@@ -274,7 +290,7 @@ describe("useProjects — null safety", () => {
   });
 
   it("sets error state when the API returns an error", async () => {
-    mockCall.mockResolvedValueOnce({ data: null, error: "Unauthorized" });
+    mockFrom.mockReturnValue(buildChain({ data: null, error: { message: "Unauthorized" } }));
     const { result } = renderHook(() => useProjects());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.error).toBe("Unauthorized");

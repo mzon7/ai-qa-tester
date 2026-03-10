@@ -13,11 +13,26 @@ import type { ReactNode } from "react";
 
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
+// Chain builder that resolves at the terminal method (.limit / .single)
+function makeChain(resolved: unknown) {
+  const chain: Record<string, unknown> = {};
+  ["select", "order", "limit", "eq", "in", "single", "insert"].forEach((m) => {
+    chain[m] = vi.fn(() => {
+      // Terminal methods return a promise; intermediate methods return the chain
+      if (m === "limit" || m === "single" || m === "insert") {
+        return Promise.resolve(resolved);
+      }
+      return chain;
+    });
+  });
+  return chain;
+}
+
 vi.mock("../../lib/supabase", () => ({
   supabase: {
-    from: vi.fn().mockReturnValue({
-      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
-    }),
+    from: vi.fn(() =>
+      makeChain({ data: [], error: null })
+    ),
   },
   dbTable: (name: string) => `ai_qa_tester_${name}`,
 }));
@@ -28,10 +43,9 @@ vi.mock("../../lib/api", () => ({
   settingsGet: vi.fn(),
   settingsSaveKeys: vi.fn(),
   settingsValidateKeys: vi.fn(),
-  // Needed because ProjectDetails now loads runs when a project is selected
   runsListByProject: vi.fn(() => Promise.resolve({ data: { runs: [] }, error: null })),
   runsCreate: vi.fn(),
-  runsGet: vi.fn(),
+  runsGet: vi.fn(() => Promise.resolve({ data: null, error: null })),
 }));
 
 vi.mock("@mzon7/zon-incubator-sdk/auth", () => ({
@@ -60,11 +74,11 @@ vi.mock("react-router-dom", async (importOriginal) => {
   };
 });
 
-import { projectsList, projectsCreate } from "../../lib/api";
+import { projectsCreate } from "../../lib/api";
+import { supabase } from "../../lib/supabase";
 import ProjectsPage from "../../features/create-project-with-target-link/components/ProjectsPage";
 import ProjectForm from "../../features/create-project-with-target-link/components/ProjectForm";
 
-const mockProjectsList = vi.mocked(projectsList);
 const mockProjectsCreate = vi.mocked(projectsCreate);
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -84,14 +98,15 @@ const SAMPLE_PROJECT = {
 
 /**
  * Render the full ProjectsPage and wait for the initial fetch to settle.
- * We wait for the DOM state that only appears once loading=false, so there
- * is no race between the initial projectsList promise and form submission.
+ * useProjects now queries Supabase directly, so we configure the mock chain
+ * to return the desired projects from .from("...").select(...).order(...).limit(N).
  */
 async function renderProjectsPage(initialProjects = [] as typeof SAMPLE_PROJECT[]) {
-  mockProjectsList.mockResolvedValue({
-    data: { projects: initialProjects },
-    error: null,
-  });
+  // The projects query hits .limit() as the terminal call.
+  // The runs enrichment query also hits .limit() (or .in() chain).
+  vi.mocked(supabase.from).mockImplementation(() =>
+    makeChain({ data: initialProjects, error: null }) as ReturnType<typeof supabase.from>
+  );
 
   const view = render(<ProjectsPage />);
 
