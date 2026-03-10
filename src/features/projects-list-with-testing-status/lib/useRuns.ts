@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { runsCreate } from "../../../lib/api";
 import type { Run, RunStep, RunLog, ScopeMode } from "../../../lib/api";
 import { supabase, dbTable } from "../../../lib/supabase";
@@ -67,21 +66,9 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     if (!projectId) return { run: null, error: "No project selected" };
     const { data, error: err } = await runsCreate(projectId, scopeMode, instructions, featureDescription);
     if (err || !data) {
-      const msg = err ?? "Failed to create run";
-      // Skip self-heal reporting for auth errors — these resolve on their own
-      // (session refresh / re-login) and are not actionable infrastructure bugs.
-      const isAuthError = msg.toLowerCase().includes("unauthorized") ||
-        msg.toLowerCase().includes("missing authorization");
-      if (!isAuthError) {
-        reportSelfHealError(supabase, {
-          category: "frontend",
-          source: "useRuns",
-          errorMessage: msg,
-          projectPrefix: "ai_qa_tester_",
-          metadata: { action: "runsCreate", projectId, scopeMode },
-        });
-      }
-      return { run: null, error: msg };
+      // callEdgeFunction already auto-reports infrastructure errors to incubator_self_heal_errors.
+      // Do not duplicate-report here — it causes false positives for transient auth issues.
+      return { run: null, error: err ?? "Failed to create run" };
     }
     setRuns((prev) => [data.run, ...prev]);
     return { run: data.run, error: null };
