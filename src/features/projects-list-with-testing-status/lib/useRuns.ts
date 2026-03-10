@@ -136,6 +136,23 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
 
   const refresh = useCallback(() => setRev((r) => r + 1), []);
 
+  // Mirror the auth state subscription from useRuns:
+  // clear stale detail data on sign-out so polling stops cleanly.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setRun(null);
+        setSteps([]);
+        setLogs([]);
+        setError(null);
+        setLoading(false);
+      } else if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        refresh();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [refresh]);
+
   useEffect(() => {
     if (!runId) { setRun(null); setSteps([]); setLogs([]); return; }
     let cancelled = false;
