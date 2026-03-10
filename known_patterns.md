@@ -66,3 +66,6 @@
 
 ## Learned: useRuns (2026-03-09)
 - The code diff shows a change in the `runsListByProject` function to query the database directly, which addresses the 'Unauthorized' error by avoiding the edge function.
+
+## Learned: useRuns (2026-03-10)
+- The code change in vite.config.ts does not address the authentication issue related to the 'Unauthorized' error; it only modifies service worker behavior.

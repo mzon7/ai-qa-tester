@@ -100,3 +100,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a change in the `runsListByProject` function to query the database directly, which addresses the 'Unauthorized' error by avoiding the edge function.
 - Status: unresolved
+
+## [2026-03-10 00:00] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code change in vite.config.ts does not address the authentication issue related to the 'Unauthorized' error; it only modifies service worker behavior.
+- Status: unresolved
