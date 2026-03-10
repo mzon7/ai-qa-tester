@@ -160,3 +160,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session refresh mechanism to handle expired tokens, addressing the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-10 00:58] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session guard to the `runsListByProject` function, addressing the 'Unauthorized' error by returning an empty runs list when there is no active session.
+- Status: unresolved
