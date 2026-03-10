@@ -135,3 +135,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes a change in 'useRuns.ts' that adds a session check before making the API call, addressing the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-10 00:42] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff includes a change in `useProjects.ts` that adds a session check to prevent unauthorized access, addressing the 'Unauthorized' error.
+- Status: unresolved
