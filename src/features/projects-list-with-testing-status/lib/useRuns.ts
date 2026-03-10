@@ -108,6 +108,10 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
     setError(null);
 
     const fetchDetail = async () => {
+      // Guard: skip if no active session to avoid unauthenticated RLS queries.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled || !session) { setLoading(false); return; }
+
       // Query DB directly — avoids edge function auth issues during polling.
       const [runResult, stepsResult, logsResult] = await Promise.all([
         supabase
