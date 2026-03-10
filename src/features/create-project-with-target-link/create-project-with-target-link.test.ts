@@ -91,8 +91,14 @@ vi.mock("@mzon7/zon-incubator-sdk", () => ({
   callEdgeFunction: vi.fn(),
   reportSelfHealError: vi.fn(),
 }));
-// vi.hoisted ensures mockFrom is available before vi.mock hoisting runs.
-const { mockFrom } = vi.hoisted(() => ({ mockFrom: vi.fn() }));
+// vi.hoisted ensures these are available before vi.mock hoisting runs.
+const { mockFrom, mockGetSession } = vi.hoisted(() => ({
+  mockFrom: vi.fn(),
+  mockGetSession: vi.fn().mockResolvedValue({
+    data: { session: { user: { id: "user-1" }, access_token: "tok" } },
+    error: null,
+  }),
+}));
 
 // Supabase chain builder used by both projectsCreate (api.ts) and useProjects (direct DB).
 // Resolves at terminal methods: limit, single, insert.
@@ -109,11 +115,11 @@ function buildChain(resolved: unknown) {
 }
 
 vi.mock("../../lib/supabase", () => ({
-  supabase: { from: mockFrom },
+  supabase: { auth: { getSession: mockGetSession }, from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 vi.mock("./lib/../../../lib/supabase", () => ({
-  supabase: { from: mockFrom },
+  supabase: { auth: { getSession: mockGetSession }, from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 
