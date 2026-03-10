@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     );
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) return json({ data: null, error: "Unauthorized" }, 200);
+    if (authError || !user) return json({ data: null, error: "Authentication required to create a run" }, 200);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
