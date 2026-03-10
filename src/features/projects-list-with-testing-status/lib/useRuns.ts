@@ -208,6 +208,33 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
           .order("ts", { ascending: true })
           .limit(500),
       ]);
+      // If the run query returned an auth error, the cached token may be stale.
+      // Refresh the session and retry all three queries once before giving up.
+      const runErr = runResult.error;
+      const isAuthErr = runErr && (
+        runErr.message.toLowerCase().includes("jwt") ||
+        runErr.message.toLowerCase().includes("unauthorized") ||
+        runErr.message.toLowerCase().includes("invalid token") ||
+        (runErr as unknown as { code?: string }).code === "PGRST301"
+      );
+      if (isAuthErr && !cancelled) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        if (!refreshed.session || cancelled) { setLoading(false); return; }
+        const [r2, s2, l2] = await Promise.all([
+          supabase.from(dbTable("qa_runs")).select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at").eq("id", runId).single(),
+          supabase.from(dbTable("qa_run_steps")).select("id, run_id, idx, title, expected, status, notes, started_at, completed_at").eq("run_id", runId).order("idx", { ascending: true }),
+          supabase.from(dbTable("qa_run_logs")).select("id, run_id, ts, level, message, step_id").eq("run_id", runId).order("ts", { ascending: true }).limit(500),
+        ]);
+        if (cancelled) return;
+        setLoading(false);
+        if (r2.error || !r2.data) { if (r2.error) setError(r2.error.message); return; }
+        setError(null);
+        setRun(r2.data as unknown as Run);
+        setSteps((s2.data ?? []) as unknown as RunStep[]);
+        setLogs((l2.data ?? []) as unknown as RunLog[]);
+        return;
+      }
+
       if (cancelled) return;
       setLoading(false);
       if (runResult.error || !runResult.data) {
