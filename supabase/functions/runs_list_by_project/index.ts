@@ -24,7 +24,9 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ data: null, error: "Missing Authorization header" }, 200);
+    // No auth header — return empty runs (not an error) consistent with auth-failure handling below.
+    // Prevents old cached browser code from receiving an error string that triggers self-heal reports.
+    if (!authHeader) return json({ data: { runs: [] }, error: null }, 200);
 
     // Use a user-scoped client (anon key + user JWT) to validate the session.
     // This is the correct Supabase pattern — using the service role key to call
