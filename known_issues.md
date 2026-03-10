@@ -125,3 +125,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff does not address the 'Unauthorized' error; it only simplifies the interval handling without fixing any authentication or authorization issues.
 - Status: unresolved
+
+## [2026-03-10 00:34] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff includes a change that adds a session check before making the database query, which addresses the 'Unauthorized' error by preventing the query from executing without a valid session.
+- Status: unresolved
