@@ -23,6 +23,8 @@ vi.mock("../../lib/supabase", () => ({
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       // Also mock refreshSession — called as fallback when getSession returns null
       refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      // Mock onAuthStateChange — returns an unsubscribe handle
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
     },
     from: vi.fn().mockReturnValue({
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),

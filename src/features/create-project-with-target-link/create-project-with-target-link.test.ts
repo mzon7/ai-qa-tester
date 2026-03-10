@@ -92,7 +92,7 @@ vi.mock("@mzon7/zon-incubator-sdk", () => ({
   reportSelfHealError: vi.fn(),
 }));
 // vi.hoisted ensures these are available before vi.mock hoisting runs.
-const { mockFrom, mockGetSession, mockRefreshSession } = vi.hoisted(() => ({
+const { mockFrom, mockGetSession, mockRefreshSession, mockOnAuthStateChange } = vi.hoisted(() => ({
   mockFrom: vi.fn(),
   mockGetSession: vi.fn().mockResolvedValue({
     data: { session: { user: { id: "user-1" }, access_token: "tok" } },
@@ -102,6 +102,7 @@ const { mockFrom, mockGetSession, mockRefreshSession } = vi.hoisted(() => ({
     data: { session: { user: { id: "user-1" }, access_token: "tok" } },
     error: null,
   }),
+  mockOnAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
 }));
 
 // Supabase chain builder used by both projectsCreate (api.ts) and useProjects (direct DB).
@@ -119,11 +120,11 @@ function buildChain(resolved: unknown) {
 }
 
 vi.mock("../../lib/supabase", () => ({
-  supabase: { auth: { getSession: mockGetSession, refreshSession: mockRefreshSession }, from: mockFrom },
+  supabase: { auth: { getSession: mockGetSession, refreshSession: mockRefreshSession, onAuthStateChange: mockOnAuthStateChange }, from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 vi.mock("./lib/../../../lib/supabase", () => ({
-  supabase: { auth: { getSession: mockGetSession, refreshSession: mockRefreshSession }, from: mockFrom },
+  supabase: { auth: { getSession: mockGetSession, refreshSession: mockRefreshSession, onAuthStateChange: mockOnAuthStateChange }, from: mockFrom },
   dbTable: (n: string) => `ai_qa_tester_${n}`,
 }));
 

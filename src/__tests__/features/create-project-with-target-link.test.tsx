@@ -39,6 +39,7 @@ vi.mock("../../lib/supabase", () => ({
         data: { session: { user: { id: "user-1" }, access_token: "tok" } },
         error: null,
       }),
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
     },
     from: vi.fn(() =>
       makeChain({ data: [], error: null })

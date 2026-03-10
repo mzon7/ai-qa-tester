@@ -23,6 +23,23 @@ export function useRuns(projectId: string | null): UseRunsReturn {
 
   const refresh = useCallback(() => setRev((r) => r + 1), []);
 
+  // Subscribe to auth state changes so we can react immediately rather than
+  // waiting for the next poll cycle to discover a session change.
+  // SIGNED_OUT → clear stale run data.
+  // TOKEN_REFRESHED / SIGNED_IN → trigger a fresh fetch.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setRuns([]);
+        setError(null);
+        setLoading(false);
+      } else if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        refresh();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [refresh]);
+
   useEffect(() => {
     if (!projectId) { setRuns([]); setLoading(false); return; }
     let cancelled = false;
