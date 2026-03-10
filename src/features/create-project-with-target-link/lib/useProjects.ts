@@ -37,7 +37,13 @@ export function useProjects(): UseProjectsReturn {
     const fetchProjects = async () => {
       // Guard: skip if no active session — RLS would silently return empty,
       // and unauthenticated polling can surface auth errors in error tracking.
-      const { data: { session } } = await supabase.auth.getSession();
+      // Try refreshSession first in case the access token has silently expired
+      // but the refresh token is still valid (common after a tab is left open).
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        session = refreshed.session;
+      }
       if (cancelled || !session) { setLoading(false); return; }
 
       const { data: projectRows, error: projErr } = await supabase
