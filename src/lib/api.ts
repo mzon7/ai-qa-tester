@@ -158,9 +158,36 @@ export async function runsListByProject(project_id: string): Promise<{ data: Lis
   return { data: { runs: (data ?? []) as Run[] }, error: null };
 }
 
-/** Get a single run with its steps and logs. */
-export function runsGet(run_id: string) {
-  return callEdgeFunction<GetRunResult>(supabase, "runs_get", { run_id });
+/** Get a single run with its steps and logs. Uses direct DB query to avoid
+ *  edge-function auth issues that caused recurring Unauthorized errors. */
+export async function runsGet(run_id: string): Promise<{ data: GetRunResult | null; error: string | null }> {
+  const [runResult, stepsResult, logsResult] = await Promise.all([
+    supabase
+      .from(dbTable("qa_runs"))
+      .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
+      .eq("id", run_id)
+      .single(),
+    supabase
+      .from(dbTable("qa_run_steps"))
+      .select("id, run_id, idx, title, expected, status, notes, started_at, completed_at")
+      .eq("run_id", run_id)
+      .order("idx", { ascending: true }),
+    supabase
+      .from(dbTable("qa_run_logs"))
+      .select("id, run_id, ts, level, message, step_id")
+      .eq("run_id", run_id)
+      .order("ts", { ascending: true })
+      .limit(500),
+  ]);
+  if (runResult.error || !runResult.data) return { data: null, error: runResult.error?.message ?? "Run not found" };
+  return {
+    data: {
+      run: runResult.data as unknown as Run,
+      steps: (stepsResult.data ?? []) as unknown as RunStep[],
+      logs: (logsResult.data ?? []) as unknown as RunLog[],
+    },
+    error: null,
+  };
 }
 
 // ─── Feature Plan ─────────────────────────────────────────────────────────────
