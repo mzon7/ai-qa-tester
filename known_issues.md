@@ -180,3 +180,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code changes only modify the error messages returned when authentication fails, but do not address the underlying authentication issue that causes the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-10 01:10] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the `createRun` function was modified to include a call to `refreshSession()` if the initial `getSession()` call returns null, addressing the 'Unauthorized' error by ensuring the session is refreshed before making the API call.
+- Status: unresolved
