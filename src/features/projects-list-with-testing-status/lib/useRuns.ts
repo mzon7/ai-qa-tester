@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { runsCreate } from "../../../lib/api";
 import type { Run, RunStep, RunLog, ScopeMode } from "../../../lib/api";
 import { supabase, dbTable } from "../../../lib/supabase";
@@ -52,14 +52,12 @@ export function useRuns(projectId: string | null): UseRunsReturn {
   // Poll: 5s if a run is active, 30s otherwise
   const latestRun = runs[0] ?? null;
   const isActive = latestRun ? ACTIVE_STATUSES.has(latestRun.status) : false;
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
     const delay = isActive ? 5_000 : 30_000;
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    intervalRef.current = setInterval(refresh, delay);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    const id = setInterval(refresh, delay);
+    return () => clearInterval(id);
   }, [projectId, isActive, refresh]);
 
   const createRun = useCallback(async (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => {
