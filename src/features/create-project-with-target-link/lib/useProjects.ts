@@ -35,6 +35,11 @@ export function useProjects(): UseProjectsReturn {
     setError(null);
 
     const fetchProjects = async () => {
+      // Guard: skip if no active session — RLS would silently return empty,
+      // and unauthenticated polling can surface auth errors in error tracking.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled || !session) { setLoading(false); return; }
+
       const { data: projectRows, error: projErr } = await supabase
         .from(dbTable("projects"))
         .select("id, user_id, name, url, status, created_at, updated_at")

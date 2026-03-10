@@ -31,7 +31,10 @@ function makeChain(resolved: unknown) {
 vi.mock("../../lib/supabase", () => ({
   supabase: {
     auth: {
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: { user: { id: "user-1" }, access_token: "tok" } },
+        error: null,
+      }),
     },
     from: vi.fn(() =>
       makeChain({ data: [], error: null })
