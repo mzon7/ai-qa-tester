@@ -47,7 +47,11 @@ export function useRuns(projectId: string | null): UseRunsReturn {
         .limit(50);
       if (cancelled) return;
       setLoading(false);
-      if (err || !data) return;
+      if (err || !data) {
+        if (err) setError(err.message);
+        return;
+      }
+      setError(null);
       setRuns(data as Run[]);
     };
     fetchRuns();
@@ -138,7 +142,11 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
       ]);
       if (cancelled) return;
       setLoading(false);
-      if (runResult.error || !runResult.data) return;
+      if (runResult.error || !runResult.data) {
+        if (runResult.error) setError(runResult.error.message);
+        return;
+      }
+      setError(null);
       setRun(runResult.data as unknown as Run);
       setSteps((stepsResult.data ?? []) as unknown as RunStep[]);
       setLogs((logsResult.data ?? []) as unknown as RunLog[]);
