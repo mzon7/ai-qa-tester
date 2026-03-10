@@ -175,3 +175,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a change that modifies the response for missing authorization headers, which addresses the unauthorized error by returning an empty runs array instead of an error message.
 - Status: unresolved
+
+## [2026-03-10 01:07] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code changes only modify the error messages returned when authentication fails, but do not address the underlying authentication issue that causes the 'Unauthorized' error.
+- Status: unresolved
