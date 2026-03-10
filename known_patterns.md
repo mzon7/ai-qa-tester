@@ -75,3 +75,6 @@
 
 ## Learned: useRuns (2026-03-10)
 - The code diff shows that the `runsGet` function was modified to use direct database queries instead of edge functions, which addresses the 'Unauthorized' error.
+
+## Learned: useRuns (2026-03-10)
+- The code diff includes a change that handles the 401 Unauthorized error by stopping the reconnection attempts, which directly addresses the authentication issue.

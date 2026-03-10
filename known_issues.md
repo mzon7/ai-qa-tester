@@ -115,3 +115,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the `runsGet` function was modified to use direct database queries instead of edge functions, which addresses the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-10 00:11] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff includes a change that handles the 401 Unauthorized error by stopping the reconnection attempts, which directly addresses the authentication issue.
+- Status: unresolved
