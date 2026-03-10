@@ -69,3 +69,6 @@
 
 ## Learned: useRuns (2026-03-10)
 - The code change in vite.config.ts does not address the authentication issue related to the 'Unauthorized' error; it only modifies service worker behavior.
+
+## Learned: useRuns (2026-03-10)
+- The code diff removes the unnecessary error reporting for authentication issues, which addresses the 'Unauthorized' error by preventing false positives in error reporting.
