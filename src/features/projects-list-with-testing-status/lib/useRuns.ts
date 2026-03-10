@@ -30,9 +30,15 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setError(null);
 
     const fetchRuns = async () => {
-      // Query the DB directly instead of via edge function — this avoids the
-      // entire auth-token-over-HTTP problem that caused recurring Unauthorized
-      // errors during background polling. RLS enforces user_id ownership.
+      // Guard: skip the DB query if there is no active session.
+      // Without a valid session, RLS would block all rows, returning an empty
+      // array silently — but it also means we're polling unnecessarily and any
+      // upstream auth error would surface as "Unauthorized" in error tracking.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled || !session) { setLoading(false); return; }
+
+      // Query the DB directly instead of via edge function — avoids the
+      // auth-token-over-HTTP problem that caused recurring Unauthorized errors.
       const { data, error: err } = await supabase
         .from(dbTable("qa_runs"))
         .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
