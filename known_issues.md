@@ -170,3 +170,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff adds a session guard to the `runsGet` function, which addresses the unauthorized error by checking for an active session before making database queries.
 - Status: unresolved
+
+## [2026-03-10 01:04] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a change that modifies the response for missing authorization headers, which addresses the unauthorized error by returning an empty runs array instead of an error message.
+- Status: unresolved
