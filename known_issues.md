@@ -155,3 +155,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the `refreshSession` method was added to handle cases where the session is null, which directly addresses the 'Unauthorized' error by attempting to refresh the session before failing.
 - Status: unresolved
+
+## [2026-03-10 00:54] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session refresh mechanism to handle expired tokens, addressing the 'Unauthorized' error.
+- Status: unresolved
