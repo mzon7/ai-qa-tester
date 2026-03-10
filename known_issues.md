@@ -130,3 +130,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes a change that adds a session check before making the database query, which addresses the 'Unauthorized' error by preventing the query from executing without a valid session.
 - Status: unresolved
+
+## [2026-03-10 00:39] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff includes a change in 'useRuns.ts' that adds a session check before making the API call, addressing the 'Unauthorized' error.
+- Status: unresolved
