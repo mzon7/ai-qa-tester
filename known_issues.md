@@ -110,3 +110,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff removes the unnecessary error reporting for authentication issues, which addresses the 'Unauthorized' error by preventing false positives in error reporting.
 - Status: unresolved
+
+## [2026-03-10 00:07] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the `runsGet` function was modified to use direct database queries instead of edge functions, which addresses the 'Unauthorized' error.
+- Status: unresolved

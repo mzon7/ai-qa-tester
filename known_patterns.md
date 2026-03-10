@@ -72,3 +72,6 @@
 
 ## Learned: useRuns (2026-03-10)
 - The code diff removes the unnecessary error reporting for authentication issues, which addresses the 'Unauthorized' error by preventing false positives in error reporting.
+
+## Learned: useRuns (2026-03-10)
+- The code diff shows that the `runsGet` function was modified to use direct database queries instead of edge functions, which addresses the 'Unauthorized' error.
