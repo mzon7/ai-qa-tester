@@ -78,9 +78,13 @@ export function useRuns(projectId: string | null): UseRunsReturn {
   const createRun = useCallback(async (scopeMode: ScopeMode, instructions?: string, featureDescription?: string) => {
     if (!projectId) return { run: null, error: "No project selected" };
     // Guard: verify session before calling edge function — an expired session
-    // causes a 401 from the edge function, which surfaces as "Unauthorized" in
-    // error tracking and creates noise even when the user is simply logged out.
-    const { data: { session } } = await supabase.auth.getSession();
+    // causes a 401 from the edge function. Try refreshSession() first so a
+    // user who's still active but has an expired access token can still create runs.
+    let { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      session = refreshed.session;
+    }
     if (!session) return { run: null, error: "Session expired — please sign in again" };
     const { data, error: err } = await runsCreate(projectId, scopeMode, instructions, featureDescription);
     if (err || !data) {
