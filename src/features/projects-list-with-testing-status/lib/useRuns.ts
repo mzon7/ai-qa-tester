@@ -61,12 +61,32 @@ export function useRuns(projectId: string | null): UseRunsReturn {
 
       // Query the DB directly instead of via edge function — avoids the
       // auth-token-over-HTTP problem that caused recurring Unauthorized errors.
-      const { data, error: err } = await supabase
+      let { data, error: err } = await supabase
         .from(dbTable("qa_runs"))
         .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false })
         .limit(50);
+
+      // If the query itself returns an auth error, the cached token may have been
+      // stale even though getSession() returned non-null. Refresh and retry once.
+      const isAuthError = err && (
+        err.message.toLowerCase().includes("jwt") ||
+        err.message.toLowerCase().includes("unauthorized") ||
+        err.message.toLowerCase().includes("invalid token") ||
+        (err as unknown as { code?: string }).code === "PGRST301"
+      );
+      if (isAuthError && !cancelled) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        if (!refreshed.session || cancelled) { setLoading(false); return; }
+        ({ data, error: err } = await supabase
+          .from(dbTable("qa_runs"))
+          .select("id, project_id, user_id, status, scope_mode, instructions, feature_description, started_at, completed_at, summary, error, created_at")
+          .eq("project_id", projectId)
+          .order("created_at", { ascending: false })
+          .limit(50));
+      }
+
       if (cancelled) return;
       setLoading(false);
       if (err || !data) {
