@@ -185,3 +185,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the `createRun` function was modified to include a call to `refreshSession()` if the initial `getSession()` call returns null, addressing the 'Unauthorized' error by ensuring the session is refreshed before making the API call.
 - Status: unresolved
+
+## [2026-03-10 01:15] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the `useRuns` function was modified to subscribe to `supabase.auth.onAuthStateChange`, which addresses the 'Unauthorized' error by handling authentication state changes in real time.
+- Status: unresolved
