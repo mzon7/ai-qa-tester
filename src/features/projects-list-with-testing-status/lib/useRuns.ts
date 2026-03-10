@@ -30,11 +30,16 @@ export function useRuns(projectId: string | null): UseRunsReturn {
     setError(null);
 
     const fetchRuns = async () => {
-      // Guard: skip the DB query if there is no active session.
-      // Without a valid session, RLS would block all rows, returning an empty
-      // array silently — but it also means we're polling unnecessarily and any
-      // upstream auth error would surface as "Unauthorized" in error tracking.
-      const { data: { session } } = await supabase.auth.getSession();
+      // Guard: ensure an active session before querying.
+      // getSession() returns a cached token; if null, try refreshing once — the
+      // refresh token may still be valid even if the access token has expired.
+      // This prevents "Unauthorized" errors from being logged for users who are
+      // still actively using the app but whose access token quietly expired.
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        session = refreshed.session;
+      }
       if (cancelled || !session) { setLoading(false); return; }
 
       // Query the DB directly instead of via edge function — avoids the
@@ -117,8 +122,13 @@ export function useRunDetail(runId: string | null): UseRunDetailReturn {
     setError(null);
 
     const fetchDetail = async () => {
-      // Guard: skip if no active session to avoid unauthenticated RLS queries.
-      const { data: { session } } = await supabase.auth.getSession();
+      // Guard: skip if no active session. Try a token refresh first in case the
+      // access token expired — the refresh token may still be valid.
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        session = refreshed.session;
+      }
       if (cancelled || !session) { setLoading(false); return; }
 
       // Query DB directly — avoids edge function auth issues during polling.

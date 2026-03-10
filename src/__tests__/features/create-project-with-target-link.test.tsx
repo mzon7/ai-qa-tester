@@ -35,6 +35,10 @@ vi.mock("../../lib/supabase", () => ({
         data: { session: { user: { id: "user-1" }, access_token: "tok" } },
         error: null,
       }),
+      refreshSession: vi.fn().mockResolvedValue({
+        data: { session: { user: { id: "user-1" }, access_token: "tok" } },
+        error: null,
+      }),
     },
     from: vi.fn(() =>
       makeChain({ data: [], error: null })

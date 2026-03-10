@@ -16,6 +16,7 @@ vi.mock("../../lib/supabase", () => ({
   supabase: {
     auth: {
       getSession: vi.fn(),
+      refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
   },
   dbTable: (name: string) => `ai_qa_tester_${name}`,

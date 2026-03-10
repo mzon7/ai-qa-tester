@@ -21,6 +21,8 @@ vi.mock("../../lib/supabase", () => ({
     auth: {
       // Return null session so useRunSSE exits cleanly without making network calls
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      // Also mock refreshSession — called as fallback when getSession returns null
+      refreshSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
     },
     from: vi.fn().mockReturnValue({
       insert: vi.fn().mockResolvedValue({ data: null, error: null }),
