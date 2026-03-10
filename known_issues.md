@@ -145,3 +145,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a concrete change in the `useRuns.ts` file, adding a session verification before calling the edge function, which directly addresses the 'Unauthorized' error.
 - Status: unresolved
+
+## [2026-03-10 00:48] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that error handling was improved by setting the error message in the state, which addresses the unauthorized error by ensuring that errors are not silently discarded.
+- Status: unresolved
