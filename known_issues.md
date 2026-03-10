@@ -165,3 +165,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows a concrete change that adds a session guard to the `runsListByProject` function, addressing the 'Unauthorized' error by returning an empty runs list when there is no active session.
 - Status: unresolved
+
+## [2026-03-10 01:00] Unresolved: useRuns
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff adds a session guard to the `runsGet` function, which addresses the unauthorized error by checking for an active session before making database queries.
+- Status: unresolved
