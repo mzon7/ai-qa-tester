@@ -29,6 +29,21 @@ export function useProjects(): UseProjectsReturn {
 
   const refresh = useCallback(() => setRev((r) => r + 1), []);
 
+  // Subscribe to auth state changes — clear stale project data on sign-out,
+  // refresh on token renewal. Mirrors the pattern in useRuns/useRunDetail.
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setProjects([]);
+        setError(null);
+        setLoading(false);
+      } else if (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") {
+        refresh();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [refresh]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
