@@ -225,3 +225,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the AI wrapped the edge function calls in try/catch blocks, which addresses the issue of unhandled exceptions on non-2xx responses.
 - Status: unresolved
+
+## [2026-04-17 12:16] Unresolved: ApiKeyForm
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the `callEdgeFunction` was replaced with a project-scoped version `callEdgeFn`, which automatically handles error reporting for non-2xx responses, addressing the original error.
+- Status: unresolved
