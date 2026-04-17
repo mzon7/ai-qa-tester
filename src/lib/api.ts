@@ -5,8 +5,7 @@
  * directly from component code.
  */
 
-import { callEdgeFunction } from "@mzon7/zon-incubator-sdk";
-import { supabase, dbTable } from "./supabase";
+import { supabase, dbTable, callEdgeFn } from "./supabase";
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
@@ -31,7 +30,7 @@ export interface ValidateKeysResult {
 /** Save (encrypt + store) an API key for the given provider. */
 export async function settingsSaveKeys(provider: string, api_key: string): Promise<{ data: SaveKeysResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<SaveKeysResult>(supabase, "settings_save_keys", { provider, api_key });
+    return await callEdgeFn<SaveKeysResult>("settings_save_keys", { provider, api_key });
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to save key" };
   }
@@ -40,7 +39,7 @@ export async function settingsSaveKeys(provider: string, api_key: string): Promi
 /** Load current settings (provider, key hint) — never returns the raw key. */
 export async function settingsGet(): Promise<{ data: SettingsData | null; error: string | null }> {
   try {
-    return await callEdgeFunction<SettingsData>(supabase, "settings_get", {});
+    return await callEdgeFn<SettingsData>("settings_get", {});
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to load settings" };
   }
@@ -49,7 +48,7 @@ export async function settingsGet(): Promise<{ data: SettingsData | null; error:
 /** Validate the stored API key by making a test call to the provider. */
 export async function settingsValidateKeys(): Promise<{ data: ValidateKeysResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<ValidateKeysResult>(supabase, "settings_validate_keys", {});
+    return await callEdgeFn<ValidateKeysResult>("settings_validate_keys", {});
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to validate key" };
   }
@@ -87,7 +86,7 @@ export interface ListProjectsResult {
 /** Create a new QA project. Validates and normalises the URL server-side. */
 export async function projectsCreate(targetUrl: string, name?: string): Promise<{ data: CreateProjectResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<CreateProjectResult>(supabase, "projects_create", {
+    return await callEdgeFn<CreateProjectResult>("projects_create", {
       targetUrl,
       ...(name ? { name } : {}),
     });
@@ -99,7 +98,7 @@ export async function projectsCreate(targetUrl: string, name?: string): Promise<
 /** List all projects for the current user, newest first (enriched with latest run). */
 export async function projectsList(): Promise<{ data: ListProjectsResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<ListProjectsResult>(supabase, "projects_list", {});
+    return await callEdgeFn<ListProjectsResult>("projects_list", {});
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to list projects" };
   }
@@ -155,7 +154,7 @@ export async function runsCreate(
   feature_description?: string
 ): Promise<{ data: CreateRunResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<CreateRunResult>(supabase, "runs_create", {
+    return await callEdgeFn<CreateRunResult>("runs_create", {
       project_id,
       scope_mode,
       ...(instructions ? { instructions } : {}),
@@ -240,7 +239,7 @@ export interface FeaturePlanResult {
  */
 export async function runsFeaturePlan(run_id: string): Promise<{ data: FeaturePlanResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<FeaturePlanResult>(supabase, "feature_plan", { run_id });
+    return await callEdgeFn<FeaturePlanResult>("feature_plan", { run_id });
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to generate feature plan" };
   }
@@ -262,7 +261,7 @@ export interface FeatureExecutorResult {
  */
 export async function featureExecutor(run_id: string): Promise<{ data: FeatureExecutorResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<FeatureExecutorResult>(supabase, "feature_executor", { run_id });
+    return await callEdgeFn<FeatureExecutorResult>("feature_executor", { run_id });
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to execute feature" };
   }
@@ -301,7 +300,7 @@ export interface FeatureReportResult {
  */
 export async function runsFeatureReport(run_id: string): Promise<{ data: FeatureReportResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<FeatureReportResult>(supabase, "feature_report", { run_id });
+    return await callEdgeFn<FeatureReportResult>("feature_report", { run_id });
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to generate report" };
   }
@@ -329,7 +328,7 @@ export interface ButtonScanResult {
  */
 export async function buttonScan(run_id: string): Promise<{ data: ButtonScanResult | null; error: string | null }> {
   try {
-    return await callEdgeFunction<ButtonScanResult>(supabase, "button_scan", { run_id });
+    return await callEdgeFn<ButtonScanResult>("button_scan", { run_id });
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message ?? "Failed to run button scan" };
   }

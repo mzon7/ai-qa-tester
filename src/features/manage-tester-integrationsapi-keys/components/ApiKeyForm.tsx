@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { reportSelfHealError } from "@mzon7/zon-incubator-sdk";
 import { settingsGet, settingsSaveKeys, settingsValidateKeys } from "../../../lib/api";
 import type { SettingsData } from "../../../lib/api";
-import { supabase } from "../../../lib/supabase";
 
 const PROVIDERS = [
   { value: "grok", label: "Grok (xAI)", hint: "xai-..." },
@@ -48,15 +46,7 @@ export default function ApiKeyForm() {
 
     const { data, error } = await settingsSaveKeys(provider, apiKey.trim());
     if (error || !data) {
-      const msg = error ?? "Failed to save key";
-      setSaveState({ status: "error", message: msg });
-      reportSelfHealError(supabase, {
-        category: "frontend",
-        source: "ApiKeyForm",
-        errorMessage: msg,
-        projectPrefix: "ai_qa_tester_",
-        metadata: { action: "settingsSaveKeys", provider },
-      });
+      setSaveState({ status: "error", message: error ?? "Failed to save key" });
       return;
     }
 
@@ -82,13 +72,6 @@ export default function ApiKeyForm() {
     const { data, error } = await settingsValidateKeys();
     if (error) {
       setValidation({ status: "error", message: error });
-      reportSelfHealError(supabase, {
-        category: "frontend",
-        source: "ApiKeyForm",
-        errorMessage: error,
-        projectPrefix: "ai_qa_tester_",
-        metadata: { action: "settingsValidateKeys" },
-      });
       return;
     }
     if (!data) {
