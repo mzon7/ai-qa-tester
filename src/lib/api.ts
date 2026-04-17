@@ -29,21 +29,30 @@ export interface ValidateKeysResult {
 }
 
 /** Save (encrypt + store) an API key for the given provider. */
-export function settingsSaveKeys(provider: string, api_key: string) {
-  return callEdgeFunction<SaveKeysResult>(supabase, "settings_save_keys", {
-    provider,
-    api_key,
-  });
+export async function settingsSaveKeys(provider: string, api_key: string): Promise<{ data: SaveKeysResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<SaveKeysResult>(supabase, "settings_save_keys", { provider, api_key });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to save key" };
+  }
 }
 
 /** Load current settings (provider, key hint) — never returns the raw key. */
-export function settingsGet() {
-  return callEdgeFunction<SettingsData>(supabase, "settings_get", {});
+export async function settingsGet(): Promise<{ data: SettingsData | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<SettingsData>(supabase, "settings_get", {});
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to load settings" };
+  }
 }
 
 /** Validate the stored API key by making a test call to the provider. */
-export function settingsValidateKeys() {
-  return callEdgeFunction<ValidateKeysResult>(supabase, "settings_validate_keys", {});
+export async function settingsValidateKeys(): Promise<{ data: ValidateKeysResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<ValidateKeysResult>(supabase, "settings_validate_keys", {});
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to validate key" };
+  }
 }
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
@@ -76,16 +85,24 @@ export interface ListProjectsResult {
 }
 
 /** Create a new QA project. Validates and normalises the URL server-side. */
-export function projectsCreate(targetUrl: string, name?: string) {
-  return callEdgeFunction<CreateProjectResult>(supabase, "projects_create", {
-    targetUrl,
-    ...(name ? { name } : {}),
-  });
+export async function projectsCreate(targetUrl: string, name?: string): Promise<{ data: CreateProjectResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<CreateProjectResult>(supabase, "projects_create", {
+      targetUrl,
+      ...(name ? { name } : {}),
+    });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to create project" };
+  }
 }
 
 /** List all projects for the current user, newest first (enriched with latest run). */
-export function projectsList() {
-  return callEdgeFunction<ListProjectsResult>(supabase, "projects_list", {});
+export async function projectsList(): Promise<{ data: ListProjectsResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<ListProjectsResult>(supabase, "projects_list", {});
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to list projects" };
+  }
 }
 
 // ─── Runs ──────────────────────────────────────────────────────────────────────
@@ -131,18 +148,22 @@ export interface ListRunsResult { runs: Run[] }
 export interface GetRunResult { run: Run; steps: RunStep[]; logs: RunLog[] }
 
 /** Create a new test run for a project. */
-export function runsCreate(
+export async function runsCreate(
   project_id: string,
   scope_mode: ScopeMode,
   instructions?: string,
   feature_description?: string
-) {
-  return callEdgeFunction<CreateRunResult>(supabase, "runs_create", {
-    project_id,
-    scope_mode,
-    ...(instructions ? { instructions } : {}),
-    ...(feature_description?.trim() ? { feature_description: feature_description.trim() } : {}),
-  });
+): Promise<{ data: CreateRunResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<CreateRunResult>(supabase, "runs_create", {
+      project_id,
+      scope_mode,
+      ...(instructions ? { instructions } : {}),
+      ...(feature_description?.trim() ? { feature_description: feature_description.trim() } : {}),
+    });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to create run" };
+  }
 }
 
 /** List all runs for a project, newest first. Uses direct DB query to avoid
@@ -217,8 +238,12 @@ export interface FeaturePlanResult {
  * Uses Grok to convert the run's feature_description into a bounded, structured
  * test plan (≤ 10 steps) and stores each step as a "pending" qa_run_step row.
  */
-export function runsFeaturePlan(run_id: string) {
-  return callEdgeFunction<FeaturePlanResult>(supabase, "feature_plan", { run_id });
+export async function runsFeaturePlan(run_id: string): Promise<{ data: FeaturePlanResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<FeaturePlanResult>(supabase, "feature_plan", { run_id });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to generate feature plan" };
+  }
 }
 
 
@@ -235,8 +260,12 @@ export interface FeatureExecutorResult {
  * planned qa_run_steps (populated by the feature_plan edge function).
  * Each step is executed headlessly; failures capture screenshots as artifacts.
  */
-export function featureExecutor(run_id: string) {
-  return callEdgeFunction<FeatureExecutorResult>(supabase, "feature_executor", { run_id });
+export async function featureExecutor(run_id: string): Promise<{ data: FeatureExecutorResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<FeatureExecutorResult>(supabase, "feature_executor", { run_id });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to execute feature" };
+  }
 }
 
 // ─── Feature Report ───────────────────────────────────────────────────────────
@@ -270,8 +299,12 @@ export interface FeatureReportResult {
  * Compares expected vs observed per step, attaches signed artifact URLs for
  * failures, and uses Grok to produce a Markdown summary stored on qa_runs.summary.
  */
-export function runsFeatureReport(run_id: string) {
-  return callEdgeFunction<FeatureReportResult>(supabase, "feature_report", { run_id });
+export async function runsFeatureReport(run_id: string): Promise<{ data: FeatureReportResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<FeatureReportResult>(supabase, "feature_report", { run_id });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to generate report" };
+  }
 }
 
 // ─── Button Scan ──────────────────────────────────────────────────────────────
@@ -294,6 +327,10 @@ export interface ButtonScanResult {
  * Fetches the target page HTML, analyzes all interactive elements with AI,
  * creates run steps + logs, and marks the run as passed or failed.
  */
-export function buttonScan(run_id: string) {
-  return callEdgeFunction<ButtonScanResult>(supabase, "button_scan", { run_id });
+export async function buttonScan(run_id: string): Promise<{ data: ButtonScanResult | null; error: string | null }> {
+  try {
+    return await callEdgeFunction<ButtonScanResult>(supabase, "button_scan", { run_id });
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message ?? "Failed to run button scan" };
+  }
 }
