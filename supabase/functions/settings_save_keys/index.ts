@@ -70,12 +70,12 @@ Deno.serve(async (req) => {
     const { provider, api_key } = body as { provider: string; api_key: string };
 
     if (!provider || !api_key) {
-      return json({ data: null, error: "provider and api_key are required" }, 400);
+      return json({ data: null, error: "provider and api_key are required" });
     }
 
     const validProviders = ["grok", "openai"];
     if (!validProviders.includes(provider)) {
-      return json({ data: null, error: `provider must be one of: ${validProviders.join(", ")}` }, 400);
+      return json({ data: null, error: `provider must be one of: ${validProviders.join(", ")}` });
     }
 
     // Encrypt the key
@@ -94,10 +94,10 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
-    if (dbError) return json({ data: null, error: dbError.message }, 500);
+    if (dbError) return json({ data: null, error: dbError.message });
 
     return json({ data: { hint, provider }, error: null });
   } catch (err) {
-    return json({ data: null, error: err?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: err?.message ?? "Unexpected error" });
   }
 });

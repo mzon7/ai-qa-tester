@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (dbError) return json({ data: null, error: dbError.message }, 500);
+    if (dbError) return json({ data: null, error: dbError.message });
 
     return json({
       data: data
@@ -61,6 +61,6 @@ Deno.serve(async (req) => {
       error: null,
     });
   } catch (err) {
-    return json({ data: null, error: err?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: err?.message ?? "Unexpected error" });
   }
 });

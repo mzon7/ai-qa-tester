@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
 
     // Rate limiting
     if (isRateLimited(user.id)) {
-      return json({ data: null, error: "Rate limit exceeded. Try again in 1 minute." }, 429);
+      return json({ data: null, error: "Rate limit exceeded. Try again in 1 minute." });
     }
 
     // Fetch encrypted key
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (dbError) return json({ data: null, error: dbError.message }, 500);
+    if (dbError) return json({ data: null, error: dbError.message });
     if (!settings?.llm_api_key_encrypted) {
       return json({ data: { valid: false, message: "No API key saved. Save a key first." }, error: null });
     }
@@ -139,6 +139,6 @@ Deno.serve(async (req) => {
 
     return json({ data: result, error: null });
   } catch (err) {
-    return json({ data: null, error: err?.message ?? "Unexpected error" }, 500);
+    return json({ data: null, error: err?.message ?? "Unexpected error" });
   }
 });
