@@ -220,3 +220,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff shows that the error handling in the Edge Functions was modified to return a 200 status code instead of 400, 429, or 500, which addresses the original error of returning a non-2xx status code.
 - Status: unresolved
+
+## [2026-04-17 12:12] Unresolved: ApiKeyForm
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the AI wrapped the edge function calls in try/catch blocks, which addresses the issue of unhandled exceptions on non-2xx responses.
+- Status: unresolved
