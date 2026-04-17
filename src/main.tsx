@@ -10,6 +10,15 @@ import "./index.css";
 // Self-heal: capture uncaught errors + unhandled rejections
 installFrontendErrorCapture(supabase, "ai_qa_tester_");
 
+// Register service worker with error handling to avoid unhandled rejection noise
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+      // SW registration can fail in dev, incognito, or when sw.js is not yet built — safe to ignore
+    });
+  });
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
