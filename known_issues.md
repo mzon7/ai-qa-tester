@@ -215,3 +215,8 @@
 - Error: Error messages (most recent):
 - Attempted: 1 fix(es), verdict: The code diff includes a change that manually registers the service worker with error handling, addressing the original error of failed service worker registration.
 - Status: unresolved
+
+## [2026-04-17 12:08] Unresolved: ApiKeyForm
+- Error: Error messages (most recent):
+- Attempted: 1 fix(es), verdict: The code diff shows that the error handling in the Edge Functions was modified to return a 200 status code instead of 400, 429, or 500, which addresses the original error of returning a non-2xx status code.
+- Status: unresolved
